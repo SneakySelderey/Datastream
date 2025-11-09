@@ -5,7 +5,7 @@ import Player from './components/Player';
 import { type Track } from './types';
 
 const trackList = [
-  { id: 1, title: 'Synthwave Dreams', artist: 'Cyber Runner', src: '/music/song1.mp3', cover: '/covers/cover1.jpg' },
+  { id: 1, title: '01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27)', artist: '1000 Eyes', src: '/music/01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27).flac', cover: '/covers/cover.png' },
   { id: 2, title: 'Ocean Drive', artist: 'Night Rider', src: '/music/song2.mp3', cover: '/covers/cover2.jpg' },
 ];
 
