@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+@theme {
+  --color-bg: white;
+  --color-accent: #e5e7eb;
+  --color-fg: black;
+}
+
+@layer base {
+  .dark {
+    --color-bg: #3f3f3f;
+    --color-accent: #5b5b5b;
+    --color-fg: white;
+  }
+}

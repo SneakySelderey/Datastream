@@ -66,7 +66,7 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay }) => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-3 bg-gray-200 text-black z-50">
+    <div className="fixed bottom-0 left-0 right-0 p-3 bg-accent text-fg z-50 transition-colors duration-300 ease-in-out">
       <audio
         ref={audioRef}
         src={track?.src}
@@ -81,11 +81,11 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay }) => {
         <div className='flex-col w-full truncate'>
           <div>
             <p className="font-bold">{track.title}</p>
-            <p className="text-gray-400">{track.artist}</p>
+            <p>{track.artist}</p>
           </div>
           
           <div className="w-full flex items-center gap-2">
-            <span className="text-sm text-gray-600 text-right">{formatTime(currentTime)}</span>
+            <span className="text-sm text-right">{formatTime(currentTime)}</span>
               <input
                 type="range"
                 min={0}
@@ -94,28 +94,28 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay }) => {
                 onChange={handleSeek}
                 className="w-full h-1 bg-gray-400 rounded-lg appearance-none cursor-pointer"
               />
-              <span className="text-sm text-gray-600 w-10 text-left">{formatTime(duration)}</span>
+              <span className="text-sm w-10 text-left">{formatTime(duration)}</span>
           </div>
         </div>
 
         <button>
-          <SkipBackwardIcon className='w-8 h-8 cursor-pointer'/>
+          <SkipBackwardIcon className='w-8 h-8 cursor-pointer fill-current'/>
         </button>
 
         <button onClick={onTogglePlay}>
           {isPlaying ? (
-            <PauseIcon className='w-6 h-6 cursor-pointer'/>
+            <PauseIcon className='w-6 h-6 cursor-pointer fill-current'/>
           ) : (
-            <PlayIcon className='w-6 h-6 cursor-pointer'/>
+            <PlayIcon className='w-6 h-6 cursor-pointer fill-current'/>
           )}
         </button>
 
         <button>
-          <SkipForwardIcon className='w-8 h-8 cursor-pointer'/>
+          <SkipForwardIcon className='w-8 h-8 cursor-pointer fill-current'/>
         </button>
 
         <div className='hidden md:flex items-center gap-2'>
-          <VolumeIcon className="w-6 h-6 text-gray-600" />
+          <VolumeIcon className="w-6 h-6 fill-current" />
           
           <input
             type="range"

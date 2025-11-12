@@ -5,10 +5,13 @@ const resources = {
   en: {
     translation: {
       "nothingPlaying": "Nothing is playing",
+      "changeTheme": "Change theme",
     }
   },
   ru: {
     translation: {
+      "nothingPlaying": "Ничего не играет",
+      "changeTheme": "Сменить тему",
     }
   }
 };

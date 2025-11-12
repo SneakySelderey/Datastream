@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import Header from './components/Header'
 import Player from './components/Player';
 
-import { type Track } from './types';
+import { type Theme, type Track } from './types';
 
 const trackList = [
   { id: 1, title: '01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27)', artist: '1000 Eyes', src: '/music/01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27).flac', cover: '/covers/cover.png' },
@@ -11,8 +11,14 @@ const trackList = [
 ];
 
 function App() {
+  const [currentTheme, setCurrentTheme] = useState('light');
+
   const [currentTrack, setCurrentTrack] = useState(trackList[0]);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const handleThemeChange = () => {
+    setCurrentTheme(currentTheme == 'light' ? 'dark' : 'light');
+  }
 
   const handleSelectTrack = (track: Track) => {
     setCurrentTrack(track);
@@ -23,9 +29,15 @@ function App() {
     setIsPlaying(prev => !prev);
   };
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', currentTheme === 'dark')
+  }, [currentTheme])
+
   return (
-    <div>
-      <Header/>
+    <div className='min-h-screen bg-bg text-fg transition-colors duration-300 ease-in-out'>
+      <Header
+        onChangeTheme={handleThemeChange}
+      />
 
       <Player 
         track={currentTrack}
