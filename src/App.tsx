@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import Header from './components/Header'
 import Player from './components/Player';
 
 import { type Track } from './types';
@@ -24,6 +25,8 @@ function App() {
 
   return (
     <div>
+      <Header/>
+
       <Player 
         track={currentTrack}
         isPlaying={isPlaying}
