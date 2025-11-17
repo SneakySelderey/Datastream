@@ -13,12 +13,17 @@ const trackList = [
 
 function App() {
   const [currentTheme, setCurrentTheme] = useState('light');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [currentTrack, setCurrentTrack] = useState(trackList[0]);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleThemeChange = () => {
     setCurrentTheme(currentTheme == 'light' ? 'dark' : 'light');
+  }
+
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen(prev => !prev);
   }
 
   const handleSelectTrack = (track: Track) => {
@@ -34,14 +39,34 @@ function App() {
     document.documentElement.classList.toggle('dark', currentTheme === 'dark')
   }, [currentTheme])
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 768px)');
+    
+    setIsSidebarOpen(mediaQuery.matches);
+
+    const handleResize = (e: MediaQueryListEvent) => {
+      setIsSidebarOpen(e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleResize);
+
+    return () => mediaQuery.removeEventListener('change', handleResize);
+  }, []);
+
   return (
     <div className='min-h-screen bg-bg text-fg transition-colors duration-300 ease-in-out'>
       <Header
         onChangeTheme={handleThemeChange}
+        onToggleSidebar={handleToggleSidebar}
       />
 
-      <Sidebar />
+      <Sidebar
+        isOpen={isSidebarOpen}
+      />
 
+      <main className={`pt-12 pb-24 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'md:ml-55' : ''}`}>
+        <h1 className="text-2xl font-bold">Page Content</h1>
+      </main>
       <Player 
         track={currentTrack}
         isPlaying={isPlaying}
