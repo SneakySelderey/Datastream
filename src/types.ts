@@ -7,3 +7,11 @@ export interface Track {
   src: string;
   cover: string;
 }
+
+export interface Album {
+  id: number;
+  title: string;
+  artist: string;
+  year: number;
+  cover: string;
+}
