@@ -7,12 +7,11 @@ import UserIcon from '../assets/user.svg?react';
 import ThemeIcon from '../assets/theme.svg?react';
 import MenuIcon from '../assets/burger-menu.svg?react';
 
-const translatableSegments: { [key: string]: string } = {
-  '/albums': 'albums',
-  '/artists': 'artists',
-  '/songs': 'songs',
-  '/playlists': 'playlists',
-  'all': 'all',
+const pageTitleKeys: { [key: string]: string } = {
+  'albums': 'albums',
+  'artists': 'artists',
+  'songs': 'songs',
+  'playlists': 'playlists',
 };
 
 interface HeaderProps {
@@ -27,23 +26,16 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
   const generatePageTitle = (): string => {
     const { pathname } = location;
 
-    const pathSegments = pathname.split('/').filter(Boolean);
+    const mainSegment = pathname.split('/')[1] || '';
 
-    const titleParts = pathSegments.map(segment => {
-      const translationKey = translatableSegments[segment];
-      
-      if (translationKey) {
-        return t(translationKey);
-      }
-      
-      return decodeURIComponent(segment).replace(/-/g, ' ');
-    });
+    const translationKey = pageTitleKeys[mainSegment];
 
-    const dynamicTitle = titleParts
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' - ');
+    if (translationKey) {
+      const title = t(translationKey);
+      return title.charAt(0).toUpperCase() + title.slice(1);
+    }
 
-    return `Datastream - ${dynamicTitle}`;
+    return ''; 
   };
   
   const pageTitle = generatePageTitle();
@@ -61,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
           <MenuIcon className="w-6 h-6 stroke-current" />
         </button>
 
-        <span>{pageTitle}</span>
+        <span>Datastream - {pageTitle}</span>
       </div>
 
       <div className='flex items-center gap-6'>

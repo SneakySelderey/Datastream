@@ -20,7 +20,7 @@ const AlbumGrid = ({ albums, onSelectAlbum }: AlbumGridProps) => {
               alt={`${album.title} album cover`}
             />
           </div>
-          <h3 className="font-bold truncate">{album.title}</h3>
+          <h3 className="mt-1 truncate">{album.title}</h3>
           <p className="text-sm text-fg">
             {album.artist} &bull; {album.date}
           </p>
