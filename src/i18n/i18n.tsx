@@ -14,7 +14,8 @@ const resources = {
       "most_played": "Most Played",
       "artists": "Artists",
       "songs": "Songs",
-      "playlists": "Playlists"
+      "playlists": "Playlists",
+      "albumsLoading": "Albums loading..."
     }
   },
   ru: {

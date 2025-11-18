@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next';
 
 import Header from './components/Header'
 import Sidebar from './components/Sidebar';
@@ -15,6 +16,8 @@ const trackList = [
 ];
 
 function App() {
+  const { t } = useTranslation();
+
   const [currentTheme, setCurrentTheme] = useState('light');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -74,7 +77,7 @@ function App() {
       />
 
       <main className={`pt-12 pb-24 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'md:ml-55' : ''}`}>
-         {isLoading && <p>Albums loading</p>}
+         {isLoading && <p>{t('albumsLoading')}</p>}
 
          {error && <p className="text-red-500">{error}</p>}
 
