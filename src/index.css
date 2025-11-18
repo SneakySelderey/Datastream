@@ -2,16 +2,16 @@
 
 @theme {
   --color-bg: white;
-  --color-accent: #e5e7eb;
+  --color-accent: #f1f2f4;
   --color-fg: black;
-  --color-hv: #acacac;
+  --color-hv: #e0e0e0;
 }
 
 @layer base {
   .dark {
     --color-bg: #3f3f3f;
-    --color-accent: #5b5b5b;
+    --color-accent: #4f4f4f;
     --color-fg: white;
-    --color-hv: #acacac;
+    --color-hv: #747474;
   }
 }

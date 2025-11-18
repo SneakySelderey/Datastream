@@ -3,11 +3,14 @@ import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar';
 import Player from './components/Player';
+import AlbumGrid from './components/AlbumGrid';
 
-import { type Theme, type Track } from './types';
+import { type Theme, type Track, type Album } from './types';
+
+import { useAlbums } from './hooks/useAlbums';
 
 const trackList = [
-  { id: 1, title: '01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27)', artist: '1000 Eyes', src: '/music/01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27).flac', cover: '/covers/cover.png' },
+  { id: 1, title: '01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27)', artist: '1000 Eyes', src: '/music/01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27).flac', cover: '/covers/Schwanengesang.png' },
   { id: 2, title: 'Ocean Drive', artist: 'Night Rider', src: '/music/song2.mp3', cover: '/covers/cover2.jpg' },
 ];
 
@@ -18,6 +21,8 @@ function App() {
   const [currentTrack, setCurrentTrack] = useState(trackList[0]);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const { albums, isLoading, error } = useAlbums();
+
   const handleThemeChange = () => {
     setCurrentTheme(currentTheme == 'light' ? 'dark' : 'light');
   }
@@ -25,6 +30,10 @@ function App() {
   const handleToggleSidebar = () => {
     setIsSidebarOpen(prev => !prev);
   }
+
+  const handleSelectAlbum = (album: Album) => {
+    console.log('Album chosen:', album.title);
+  };
 
   const handleSelectTrack = (track: Track) => {
     setCurrentTrack(track);
@@ -65,7 +74,16 @@ function App() {
       />
 
       <main className={`pt-12 pb-24 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'md:ml-55' : ''}`}>
-        <h1 className="text-2xl font-bold">Page Content</h1>
+         {isLoading && <p>Albums loading</p>}
+
+         {error && <p className="text-red-500">{error}</p>}
+
+         {!isLoading && !error && (
+            <AlbumGrid 
+              albums={albums} 
+              onSelectAlbum={handleSelectAlbum} 
+            />
+          )}
       </main>
       <Player 
         track={currentTrack}

@@ -19,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const { t } = useTranslation();
 
   return (
-    <aside className={`fixed top-12 bottom-0 left-0 w-55 bg-accent z-40 transform transition-transform duration-300 ease-in-out
+    <aside className={`fixed top-12 bottom-0 left-0 w-55 bg-accent z-40 transform transition-colors duration-300 ease-in-out
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <nav className="flex-column">
         <div>

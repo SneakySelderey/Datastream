@@ -5,17 +5,17 @@ import { type Album } from '../types';
 const mockAlbums: Album[] = [
   {
     id: 1,
-    title: 'Chronoscape',
-    artist: 'Vector Shift',
-    year: 2023,
-    cover: '/covers/album1.jpg'
+    title: 'Charon',
+    artist: '1000 Eyes',
+    year: 2025,
+    cover: '/covers/charon.jpg'
   },
   {
     id: 2,
-    title: 'Ethereal Echoes',
-    artist: 'Luna Bloom',
-    year: 2022,
-    cover: '/covers/album2.png'
+    title: 'Schwanengesang',
+    artist: '1000 Eyes',
+    year: 2025,
+    cover: '/covers/Schwanengesang.png'
   },
 ];
 
