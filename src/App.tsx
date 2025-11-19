@@ -8,6 +8,8 @@ import Header from './components/Header'
 import Sidebar from './components/Sidebar';
 import Player from './components/Player';
 
+import { useLocalStorage } from './hooks/useLocalStorage';
+
 import { type Theme, type Track} from './types';
 
 const defaultTrack: Track = { 
@@ -17,12 +19,12 @@ const defaultTrack: Track = {
 };
 
 function App() {
-  const [currentTheme, setCurrentTheme] = useState<Theme>('light');
+  const [currentTheme, setCurrentTheme] = useLocalStorage<Theme>('app-theme', 'light');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const [currentTrack, setCurrentTrack] = useState<Track>(defaultTrack);
+  const [currentTrack, setCurrentTrack] = useLocalStorage<Track>('player-current-track', defaultTrack);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [queue, setQueue] = useState<Track[]>([]);
+  const [queue, setQueue] = useLocalStorage<Track[]>('player-queue', []);
 
   const handleThemeChange = () => {
     setCurrentTheme(currentTheme == 'light' ? 'dark' : 'light');
