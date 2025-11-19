@@ -29,6 +29,7 @@ function App() {
     setIsSidebarOpen(prev => !prev);
   }
 
+  // @ts-ignore
   const handleSelectTrack = (track: Track) => {
     setCurrentTrack(track);
     setIsPlaying(true);
