@@ -10,7 +10,13 @@ import PlayIcon from '../assets/play.svg?react';
 import ShuffleIcon from '../assets/random-albums.svg?react';
 import PlaylistsIcon from '../assets/playlists.svg?react';
 
-const AlbumDetailsPage = () => {
+import { type Track } from '../types';
+
+interface AlbumDetailsPageProps {
+  onPlayTrack: (track: Track, queue: Track[]) => void;
+}
+
+const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ onPlayTrack }) => {
   const { t } = useTranslation();
 
   const { albumId } = useParams();
@@ -50,7 +56,7 @@ const AlbumDetailsPage = () => {
       </div>
 
       <div className="mt-8">
-        <Tracklist tracks={album.tracklist} />
+        <Tracklist tracks={album.tracklist} onPlayTrack={onPlayTrack} />
       </div>
     </div>
   );

@@ -19,9 +19,13 @@ interface PlayerProps {
   track: Track;
   isPlaying: boolean;
   onTogglePlay: () => void;
+  onNext: () => void;
+  onPrev: () => void;
+  hasNext?: boolean;
+  hasPrev?: boolean;
 }
 
-const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay }) => {
+const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, onNext, onPrev, hasNext, hasPrev }) => {
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [volume, setVolume] = useState<number>(0.5);
@@ -72,7 +76,10 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay }) => {
         src={track?.src}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        onEnded={onTogglePlay}
+        onEnded={() => {
+            if (hasNext) onNext();
+            else onTogglePlay();
+        }}
       />
       
       <div className="flex items-center gap-5">
@@ -98,7 +105,7 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay }) => {
           </div>
         </div>
 
-        <button>
+        <button onClick={onPrev} disabled={!hasPrev}>
           <SkipBackwardIcon className='w-8 h-8 cursor-pointer fill-current'/>
         </button>
 
@@ -110,7 +117,7 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay }) => {
           )}
         </button>
 
-        <button>
+        <button onClick={onNext} disabled={!hasNext}>
           <SkipForwardIcon className='w-8 h-8 cursor-pointer fill-current'/>
         </button>
 

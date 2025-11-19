@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 import AlbumsPage from './pages/AlbumsPage';
-import AlbumDetailPages from './pages/AlbumDetailsPage'; 
+import AlbumDetailsPages from './pages/AlbumDetailsPage'; 
 
 import Header from './components/Header'
 import Sidebar from './components/Sidebar';
@@ -10,16 +10,19 @@ import Player from './components/Player';
 
 import { type Theme, type Track} from './types';
 
-const trackList = [
-  { id: 1, trackNumber: 1, plays: 5, size: '15.75 MB', genres: ['classical'], title: '01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27)', artist: '1000 Eyes', src: '/music/01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27).flac', cover: '/covers/Schwanengesang.png', duration: '03:13', quality: 'FLAC' },
-];
+const defaultTrack: Track = { 
+  id: 0, trackNumber: 0, plays: 0, size: '0 MB', genres: [], 
+  title: 'Select a track to play', artist: '...', 
+  src: '', cover: '', duration: '00:00', quality: 'FLAC' 
+};
 
 function App() {
   const [currentTheme, setCurrentTheme] = useState<Theme>('light');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const [currentTrack, setCurrentTrack] = useState(trackList[0]);
+  const [currentTrack, setCurrentTrack] = useState<Track>(defaultTrack);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [queue, setQueue] = useState<Track[]>([]);
 
   const handleThemeChange = () => {
     setCurrentTheme(currentTheme == 'light' ? 'dark' : 'light');
@@ -29,14 +32,30 @@ function App() {
     setIsSidebarOpen(prev => !prev);
   }
 
-  // @ts-ignore
-  const handleSelectTrack = (track: Track) => {
+  const handlePlayTrack = (track: Track, newQueue: Track[]) => {
+    setQueue(newQueue);
     setCurrentTrack(track);
     setIsPlaying(true);
   };
 
   const handleTogglePlayPause = () => {
     setIsPlaying(prev => !prev);
+  };
+
+  const handleNextTrack = () => {
+    const currentIndex = queue.findIndex(t => t.id === currentTrack.id);
+    if (currentIndex < queue.length - 1) {
+      setCurrentTrack(queue[currentIndex + 1]);
+      setIsPlaying(true);
+    }
+  };
+
+  const handlePrevTrack = () => {
+    const currentIndex = queue.findIndex(t => t.id === currentTrack.id);
+    if (currentIndex > 0) {
+      setCurrentTrack(queue[currentIndex - 1]);
+      setIsPlaying(true);
+    }
   };
 
   useEffect(() => {
@@ -72,13 +91,17 @@ function App() {
          <Routes>
           <Route path="/" element={<Navigate to="/albums/all" replace />} />
           <Route path="/albums/all" element={<AlbumsPage />} />
-          <Route path="/albums/:albumId" element={<AlbumDetailPages />} />
+          <Route path="/albums/:albumId" element={<AlbumDetailsPages onPlayTrack={handlePlayTrack} />} />
         </Routes>
       </main>
       <Player 
         track={currentTrack}
         isPlaying={isPlaying}
         onTogglePlay={handleTogglePlayPause}
+        onNext={handleNextTrack}
+        onPrev={handlePrevTrack}
+        hasNext={queue.findIndex(t => t.id === currentTrack.id) < queue.length - 1}
+        hasPrev={queue.findIndex(t => t.id === currentTrack.id) > 0}
       />
     </div>
   )

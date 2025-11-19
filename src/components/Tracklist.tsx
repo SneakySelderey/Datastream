@@ -5,9 +5,10 @@ import { type Track } from '../types';
 
 interface TracklistProps {
   tracks: Track[];
+  onPlayTrack: (track: Track, queue: Track[]) => void;
 }
 
-const Tracklist: React.FC<TracklistProps> = ({ tracks }) => {
+const Tracklist: React.FC<TracklistProps> = ({ tracks, onPlayTrack }) => {
   const { t } = useTranslation();
 
   return (
@@ -29,10 +30,11 @@ const Tracklist: React.FC<TracklistProps> = ({ tracks }) => {
 
       {tracks.map((track, index) => (
         <div 
-          key={track.id} 
+          key={track.id}
+          onClick={() => onPlayTrack(track, tracks)}
           className="col-span-full grid grid-cols-subgrid gap-x-6 items-center px-3
                      border-x border-b border-fg/10 hover:bg-accent transition-colors
-                     last:rounded-b-xl last:shadow-sm"
+                     last:rounded-b-xl last:shadow-sm cursor-pointer"
         >
           <p>0</p>
           <p className="text-center py-3">{index + 1}</p>
