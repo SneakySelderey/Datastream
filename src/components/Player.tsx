@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-import { type Track } from '../types';
+import { usePlayer } from '../context/PlayerContext';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import PlayIcon from '../assets/play.svg?react';
 import PauseIcon from '../assets/pause.svg?react';
@@ -18,22 +19,15 @@ const formatTime = (timeInSeconds: number): string => {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 };
 
-interface PlayerProps {
-  track: Track;
-  isPlaying: boolean;
-  onTogglePlay: () => void;
-  queue: Track[];
-  onPlayTrack: (track: Track) => void;
-}
-
-const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, queue, onPlayTrack }) => {
+const Player: React.FC = () => {
+  const { currentTrack, isPlaying, queue, togglePlay, setTrack } = usePlayer();
 
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
-  const [volume, setVolume] = useState<number>(0.5);
+  const [volume, setVolume] = useLocalStorage<number>('player-volume', 0.5);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
 
-  const currentIndex = queue.findIndex(t => t.id === track.id);
+  const currentIndex = queue.findIndex(t => t.id === currentTrack.id);
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex !== -1 && currentIndex < queue.length - 1;
 
@@ -47,7 +41,7 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, queue, 
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, track]);
+  }, [isPlaying, currentTrack]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -57,13 +51,13 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, queue, 
 
   const handlePrev = () => {
     if (hasPrev) {
-      onPlayTrack(queue[currentIndex - 1]);
+      setTrack(queue[currentIndex - 1]);
     }
   };
 
   const handleNext = () => {
     if (hasNext) {
-      onPlayTrack(queue[currentIndex + 1]);
+      setTrack(queue[currentIndex + 1]);
     }
   };
 
@@ -93,30 +87,30 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, queue, 
       {isQueueOpen && (
         <PlayQueue 
           queue={queue}
-          currentTrack={track}
-          onPlayTrack={onPlayTrack}
+          currentTrack={currentTrack}
+          onPlayTrack={setTrack}
           onClose={() => setIsQueueOpen(false)}
         />
       )}
       
       <audio
         ref={audioRef}
-        src={track?.src}
+        src={currentTrack?.src}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={() => {
             if (hasNext) handleNext();
-            else onTogglePlay();
+            else togglePlay();
         }}
       />
       
       <div className="flex items-center gap-5">
-        <img src={track.cover} alt={track.title} className="w-16 h-16 rounded hidden md:block" />
+        <img src={currentTrack.cover} alt={currentTrack.title} className="w-16 h-16 rounded hidden md:block" />
 
         <div className='flex-col w-full truncate'>
           <div>
-            <p className="font-bold">{track.title}</p>
-            <p>{track.artist}</p>
+            <p className="font-bold">{currentTrack.title}</p>
+            <p>{currentTrack.artist}</p>
           </div>
           
           <div className="w-full flex items-center gap-2">
@@ -141,7 +135,7 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, queue, 
           <SkipBackwardIcon className='w-8 h-8 cursor-pointer fill-current'/>
         </button>
 
-        <button onClick={onTogglePlay}>
+        <button onClick={togglePlay}>
           {isPlaying ? (
             <PauseIcon className='w-6 h-6 cursor-pointer fill-current'/>
           ) : (

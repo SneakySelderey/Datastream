@@ -9,22 +9,13 @@ import Sidebar from './components/Sidebar';
 import Player from './components/Player';
 
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { PlayerProvider } from './context/PlayerContext'; 
 
-import { type Theme, type Track} from './types';
-
-const defaultTrack: Track = { 
-  id: 0, trackNumber: 0, plays: 0, size: '0 MB', genres: [], 
-  title: 'Select a track to play', artist: '...', 
-  src: '', cover: '', duration: '00:00', quality: 'FLAC' 
-};
+import { type Theme } from './types';
 
 function App() {
   const [currentTheme, setCurrentTheme] = useLocalStorage<Theme>('app-theme', 'light');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-  const [currentTrack, setCurrentTrack] = useLocalStorage<Track>('player-current-track', defaultTrack);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [queue, setQueue] = useLocalStorage<Track[]>('player-queue', []);
 
   const handleThemeChange = () => {
     setCurrentTheme(currentTheme == 'light' ? 'dark' : 'light');
@@ -33,21 +24,6 @@ function App() {
   const handleToggleSidebar = () => {
     setIsSidebarOpen(prev => !prev);
   }
-
-  const handlePlayTrack = (track: Track, newQueue: Track[]) => {
-    setQueue(newQueue);
-    setCurrentTrack(track);
-    setIsPlaying(true);
-  };
-
-  const handleTogglePlayPause = () => {
-    setIsPlaying(prev => !prev);
-  };
-
-  const handlePlayFromQueue = (track: Track) => {
-    setCurrentTrack(track);
-    setIsPlaying(true);
-  };
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', currentTheme === 'dark')
@@ -68,31 +44,27 @@ function App() {
   }, []);
 
   return (
-    <div className='min-h-screen bg-bg text-fg transition-colors duration-300 ease-in-out'>
-      <Header
-        onChangeTheme={handleThemeChange}
-        onToggleSidebar={handleToggleSidebar}
-      />
+    <PlayerProvider>
+      <div className='min-h-screen bg-bg text-fg transition-colors duration-300 ease-in-out'>
+        <Header
+          onChangeTheme={handleThemeChange}
+          onToggleSidebar={handleToggleSidebar}
+        />
 
-      <Sidebar
-        isOpen={isSidebarOpen}
-      />
+        <Sidebar
+          isOpen={isSidebarOpen}
+        />
 
-      <main className={`pt-12 pb-24 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'md:ml-55' : ''}`}>
-         <Routes>
-          <Route path="/" element={<Navigate to="/albums/all" replace />} />
-          <Route path="/albums/all" element={<AlbumsPage />} />
-          <Route path="/albums/:albumId" element={<AlbumDetailsPages onPlayTrack={handlePlayTrack} />} />
-        </Routes>
-      </main>
-      <Player 
-        track={currentTrack}
-        isPlaying={isPlaying}
-        onTogglePlay={handleTogglePlayPause}
-        queue={queue} 
-        onPlayTrack={handlePlayFromQueue} 
-      />
-    </div>
+        <main className={`pt-12 pb-24 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'md:ml-55' : ''}`}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/albums/all" replace />} />
+            <Route path="/albums/all" element={<AlbumsPage />} />
+            <Route path="/albums/:albumId" element={<AlbumDetailsPages />} />
+          </Routes>
+        </main>
+        <Player/>
+      </div>
+    </PlayerProvider>
   )
 }
 

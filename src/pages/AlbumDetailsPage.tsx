@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { useAlbum } from '../hooks/useAlbum';
+import { usePlayer } from '../context/PlayerContext';
 
 import AlbumHeader from '../components/AlbumHeader';
 import Tracklist from '../components/Tracklist';
@@ -10,14 +11,10 @@ import PlayIcon from '../assets/play.svg?react';
 import ShuffleIcon from '../assets/random-albums.svg?react';
 import PlaylistsIcon from '../assets/playlists.svg?react';
 
-import { type Track } from '../types';
-
-interface AlbumDetailsPageProps {
-  onPlayTrack: (track: Track, queue: Track[]) => void;
-}
-
-const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ onPlayTrack }) => {
+const AlbumDetailsPage: React.FC = () => {
   const { t } = useTranslation();
+
+  const { playTrack } = usePlayer();
 
   const { albumId } = useParams();
   if (!albumId) {
@@ -46,7 +43,7 @@ const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ onPlayTrack }) => {
       [shuffledTracks[i], shuffledTracks[j]] = [shuffledTracks[j], shuffledTracks[i]];
     }
 
-    onPlayTrack(shuffledTracks[0], shuffledTracks);
+    playTrack(shuffledTracks[0], shuffledTracks);
   };
 
   return (
@@ -54,7 +51,7 @@ const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ onPlayTrack }) => {
       <AlbumHeader album={album} />
 
       <div className='mt-8 flex gap-4 items-center'>
-        <button onClick={() => onPlayTrack(album.tracklist[0], album.tracklist)}
+        <button onClick={() => playTrack(album.tracklist[0], album.tracklist)}
                 className='flex items-center gap-2 px-6 py-2 border border-fg/30 rounded-full hover:scale-105 transition-all'
         >
           <PlayIcon className='w-4 h-4 fill-current stroke-current'/>
@@ -73,7 +70,7 @@ const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ onPlayTrack }) => {
       </div>
 
       <div className="mt-8">
-        <Tracklist tracks={album.tracklist} onPlayTrack={onPlayTrack} />
+        <Tracklist tracks={album.tracklist} onPlayTrack={playTrack} />
       </div>
     </div>
   );
