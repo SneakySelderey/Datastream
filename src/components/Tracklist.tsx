@@ -13,7 +13,7 @@ const Tracklist: React.FC<TracklistProps> = ({ tracks, onPlayTrack }) => {
 
   return (
     <div className="grid gap-x-6 text-sm
-        grid-cols-[auto_auto_minmax(0,2fr)_minmax(0,1fr)_auto]
+        grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,1fr)_auto]
         md:grid-cols-[auto_auto_auto_repeat(7,1fr)]">
 
       <div className="col-span-full grid grid-cols-subgrid gap-x-6 items-center

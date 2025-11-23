@@ -71,7 +71,7 @@ const resources = {
       "logout": "Выйти",
       "newNickname": "Новый никнейм",
       "newPassword": "Новый пароль",
-      "play": "Воспроизвести",
+      "play": "Играть",
       "shuffle": "Перемешать",
       "addPlayQueue": "Добавить в очередь"
     }
