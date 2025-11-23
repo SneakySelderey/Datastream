@@ -36,7 +36,9 @@ const resources = {
       "newPassword": "New password",
       "play": "Play",
       "shuffle": "Shuffle",
-      "addPlayQueue": "Add to play queue"
+      "addPlayQueue": "Add to play queue",
+      "of": "of",
+      "itemsPerPage": "Items per page"
     }
   },
   ru: {
@@ -73,7 +75,9 @@ const resources = {
       "newPassword": "Новый пароль",
       "play": "Играть",
       "shuffle": "Перемешать",
-      "addPlayQueue": "Добавить в очередь"
+      "addPlayQueue": "Добавить в очередь",
+      "of": "из",
+      "itemsPerPage": "Элементов на странице"
     }
   }
 };

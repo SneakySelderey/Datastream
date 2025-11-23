@@ -7,26 +7,33 @@ const seedAlbums: Album[] = [
   { id: '2', title: 'Schwanengesang', artist: '1000 Eyes', date: '2025-01-01', cover: '/covers/Schwanengesang.png', genres: ['Classical'], tracklist: [], trackCount: 0, duration: '0', size: '0 MB' },
 ];
 
-const mockAlbums: Album[] = [];
+const allMockAlbums: Album[] = [];
 
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < 100; i++) {
   const template = seedAlbums[i % seedAlbums.length];
 
-  mockAlbums.push({
+  allMockAlbums.push({
     ...template,
-    id: `${i}`
+    id: `${i+1}`
   });
 }
 
-export const useAlbums = () => {
+export const useAlbums = (page: number, limit: number) => {
   const [albums, setAlbums] = useState<Album[]>([]);
+  const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAlbums = () => {
       try {
-        setAlbums(mockAlbums);
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        
+        const slicedAlbums = allMockAlbums.slice(startIndex, endIndex);
+        
+        setAlbums(slicedAlbums);
+        setTotal(allMockAlbums.length);
 
       } catch (e) {
         setError('Cannot load album.');
@@ -38,7 +45,7 @@ export const useAlbums = () => {
 
     fetchAlbums();
 
-  }, []);
+  }, [page, limit]);
 
-  return { albums, isLoading, error };
+  return { albums, total, isLoading, error };
 };
