@@ -38,7 +38,10 @@ const resources = {
       "shuffle": "Shuffle",
       "addPlayQueue": "Add to play queue",
       "of": "of",
-      "itemsPerPage": "Items per page"
+      "itemsPerPage": "Items per page",
+      "searchPlaceholder": "Search",
+      "allGenres": "All Genres",
+      "allYears": "All Years"
     }
   },
   ru: {
@@ -77,7 +80,10 @@ const resources = {
       "shuffle": "Перемешать",
       "addPlayQueue": "Добавить в очередь",
       "of": "из",
-      "itemsPerPage": "Элементов на странице"
+      "itemsPerPage": "Элементов на странице",
+      "searchPlaceholder": "Поиск",
+      "allGenres": "Все жанры",
+      "allYears": "Все годы"
     }
   }
 };

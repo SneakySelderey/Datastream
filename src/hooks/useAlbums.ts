@@ -18,11 +18,21 @@ for (let i = 0; i < 100; i++) {
   });
 }
 
-export const useAlbums = (page: number, limit: number) => {
+export interface FilterState {
+  search: string;
+  genre: string;
+  year: string;
+}
+
+// @ts-ignore
+export const useAlbums = (page: number, limit: number, filters: FilterState) => {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const availableGenres = ['Ambient', 'Classical'];
+  const availableYears = ['2025'];
 
   useEffect(() => {
     const fetchAlbums = () => {
@@ -47,5 +57,5 @@ export const useAlbums = (page: number, limit: number) => {
 
   }, [page, limit]);
 
-  return { albums, total, isLoading, error };
+  return { albums, total, isLoading, error, availableGenres, availableYears };
 };

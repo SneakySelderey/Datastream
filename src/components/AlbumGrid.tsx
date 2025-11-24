@@ -7,7 +7,7 @@ interface AlbumGridProps {
 
 const AlbumGrid = ({ albums, onSelectAlbum }: AlbumGridProps) => {
   return (
-    <div className="p-2 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-center gap-1">
+    <div className="mt-5 grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] justify-center gap-1">
       {albums.map((album) => (
         <div
           key={album.id}
