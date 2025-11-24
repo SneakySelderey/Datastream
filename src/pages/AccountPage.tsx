@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
+import Dropdown from '../components/Dropdown';
+
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import ChevronIcon from '../assets/chevron-down.svg?react';
@@ -25,9 +27,12 @@ const AccountPage: React.FC = () => {
 
   const currentLang = languages.find(l => l.code === savedLang) || languages[0];
 
-  const handleSelect = (code: string) => {
-    setSavedLang(code);
-    setIsOpen(false);
+  const handleSelect = (str: string) => {
+    const lang = languages.find(l => l.label === str);
+    if (lang) {
+      setSavedLang(lang.code);
+      setIsOpen(false);
+    }
   };
 
   const [newNickname, setNewNickname] = useState('');
@@ -40,33 +45,11 @@ const AccountPage: React.FC = () => {
         <div className='flex gap-4 items-center'>
           <p>{t('language')}</p>
 
-          <div className='relative'>
-            <button 
-              onClick={() => setIsOpen(!isOpen)}
-              className={`flex items-center justify-between w-40 px-4 py-2 border border-fg/20 rounded-lg hover:border-fg/50
-                          ${isOpen ? 'border-fg ring-1 ring-fg/20' : ''}`}>
-
-              <span className="flex items-center gap-2 truncate">{currentLang.label}</span>
-
-              <ChevronIcon className={`w-4 h-4 stroke-current transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isOpen && (
-              <div className='absolute mt-2 w-full bg-bg border border-fg/10 rounded-lg shadow-md z-10 overflow-hidden'>
-                {languages.map((lang) => (
-
-                  <button
-                    key={lang.code}
-                    onClick={() => handleSelect(lang.code)}
-                    className='w-full text-left px-4 py-2 flex items-center gap-2 hover:bg-fg/5'
-                  >
-
-                    <span>{lang.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <Dropdown
+            options={languages.map(lang => lang.label)}
+            selected={currentLang.label}
+            onSelect={handleSelect}
+          />
         </div>
         
         <div className='flex gap-4 items-center'>
