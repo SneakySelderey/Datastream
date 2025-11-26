@@ -5,7 +5,9 @@ import AuthPage from './pages/AuthPage';
 import AccountPage from './pages/AccountPage';
 import AlbumsPage from './pages/AlbumsPage';
 import AlbumDetailsPages from './pages/AlbumDetailsPage';
+import ArtistsPage from './pages/ArtistsPage';
 import TracksPage from './pages/TracksPage';
+import PlaylistsPage from './pages/PlaylistsPage';
 
 import Header from './components/Header'
 import Sidebar from './components/Sidebar';
@@ -15,7 +17,6 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { PlayerProvider } from './context/PlayerContext'; 
 
 import { type Theme } from './types';
-import PlaylistsPage from './pages/PlaylistsPage';
 
 function App() {
   const [currentTheme, setCurrentTheme] = useLocalStorage<Theme>('app-theme', 'light');
@@ -76,6 +77,7 @@ function App() {
             <Route path="/account" element={<AccountPage />} />
             <Route path="/albums" element={<AlbumsPage />} />
             <Route path="/albums/:id" element={<AlbumDetailsPages />} />
+            <Route path="/artists" element={<ArtistsPage />} />
             <Route path="/songs" element={<TracksPage />} />
             <Route path="/playlists" element={<PlaylistsPage />} />
             <Route path="/playlists/:id" element={<AlbumDetailsPages type="playlist" />} />

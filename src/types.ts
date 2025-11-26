@@ -35,3 +35,12 @@ export interface FilterState {
 }
 
 export type SortMode = 'default' | 'random' | 'recently-added' | 'recently-played' | 'most-played';
+
+export interface Artist {
+  id: string;
+  name: string;
+  albumCount: number;
+  songCount: number;
+  size: string;
+  plays: number;
+}
