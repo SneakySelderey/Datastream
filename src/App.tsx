@@ -6,6 +6,7 @@ import AccountPage from './pages/AccountPage';
 import AlbumsPage from './pages/AlbumsPage';
 import AlbumDetailsPages from './pages/AlbumDetailsPage';
 import ArtistsPage from './pages/ArtistsPage';
+import ArtistDetailsPage from './pages/ArtistDetailPage';
 import TracksPage from './pages/TracksPage';
 import PlaylistsPage from './pages/PlaylistsPage';
 
@@ -78,6 +79,7 @@ function App() {
             <Route path="/albums" element={<AlbumsPage />} />
             <Route path="/albums/:id" element={<AlbumDetailsPages />} />
             <Route path="/artists" element={<ArtistsPage />} />
+            <Route path="/artists/:id" element={<ArtistDetailsPage />} />
             <Route path="/songs" element={<TracksPage />} />
             <Route path="/playlists" element={<PlaylistsPage />} />
             <Route path="/playlists/:id" element={<AlbumDetailsPages type="playlist" />} />

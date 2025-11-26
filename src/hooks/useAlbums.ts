@@ -18,8 +18,17 @@ for (let i = 0; i < 100; i++) {
   });
 }
 
+const DEFAULT_FILTERS: FilterState = {
+  search: '',
+  genre: '',
+  year: ''
+};
+
 // @ts-ignore
-export const useAlbums = (page: number, limit: number, filters: FilterState, sortMode: SortMode = 'default') => {
+export const useAlbums = (
+  page: number,limit: number, filters: FilterState = DEFAULT_FILTERS,
+  sortMode: SortMode = 'default', artistId: string = ''
+) => {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -30,11 +39,14 @@ export const useAlbums = (page: number, limit: number, filters: FilterState, sor
 
   useEffect(() => {
     const fetchAlbums = () => {
-      try {
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
+      setIsLoading(true);
 
-        let slicedAlbums: Album[] = [];
+      try {
+        let result = [...allMockAlbums];
+
+        if (artistId) {
+          // tell backend to filter by artistId
+        }
 
         if (sortMode === 'random') {
           // tell backend to return random albums
@@ -49,13 +61,15 @@ export const useAlbums = (page: number, limit: number, filters: FilterState, sor
           // tell backend to return most played albums
         }
         else {
-           slicedAlbums = allMockAlbums.slice(startIndex, endIndex);
+           // ...
         }
-        slicedAlbums = allMockAlbums.slice(startIndex, endIndex);
-        
-        setAlbums(slicedAlbums);
-        setTotal(allMockAlbums.length);
 
+        const filteredTotal = result.length;
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        
+        setAlbums(result.slice(startIndex, endIndex));
+        setTotal(filteredTotal);
       } catch (e) {
         setError('Cannot load album.');
         console.error(e);
@@ -66,7 +80,7 @@ export const useAlbums = (page: number, limit: number, filters: FilterState, sor
 
     fetchAlbums();
 
-  }, [page, limit, filters, sortMode]);
+  }, [page, limit, filters, sortMode, artistId]);
 
   return { albums, total, isLoading, error, availableGenres, availableYears };
 };
