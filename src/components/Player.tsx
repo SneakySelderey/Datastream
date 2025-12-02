@@ -1,21 +1,21 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 
-import { type Track } from '../types';
+import { type Track } from "../types";
 
-import PlayIcon from '../assets/play.svg?react';
-import PauseIcon from '../assets/pause.svg?react';
-import VolumeIcon from '../assets/volume-full.svg?react';
-import SkipBackwardIcon from '../assets/skip-backward.svg?react';
-import SkipForwardIcon from '../assets/skip-forward.svg?react';
-import PlaylistsIcon from '../assets/playlists.svg?react';
+import PlayIcon from "../assets/play.svg?react";
+import PauseIcon from "../assets/pause.svg?react";
+import VolumeIcon from "../assets/volume-full.svg?react";
+import SkipBackwardIcon from "../assets/skip-backward.svg?react";
+import SkipForwardIcon from "../assets/skip-forward.svg?react";
+import PlaylistsIcon from "../assets/playlists.svg?react";
 
-import PlayQueue from './PlayQueue';
+import PlayQueue from "./PlayQueue";
 
 const formatTime = (timeInSeconds: number): string => {
-  if (isNaN(timeInSeconds)) return '00:00';
+  if (isNaN(timeInSeconds)) return "00:00";
   const minutes = Math.floor(timeInSeconds / 60);
   const seconds = Math.floor(timeInSeconds % 60);
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 };
 
 interface PlayerProps {
@@ -26,14 +26,19 @@ interface PlayerProps {
   onPlayTrack: (track: Track) => void;
 }
 
-const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, queue, onPlayTrack }) => {
-
+const Player: React.FC<PlayerProps> = ({
+  track,
+  isPlaying,
+  onTogglePlay,
+  queue,
+  onPlayTrack,
+}) => {
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [volume, setVolume] = useState<number>(0.5);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
 
-  const currentIndex = queue.findIndex(t => t.id === track.id);
+  const currentIndex = queue.findIndex((t) => t.id === track.id);
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex !== -1 && currentIndex < queue.length - 1;
 
@@ -42,7 +47,9 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, queue, 
   useEffect(() => {
     if (audioRef.current) {
       if (isPlaying) {
-        audioRef.current.play().catch(error => console.error("Playback error:", error));
+        audioRef.current
+          .play()
+          .catch((error) => console.error("Playback error:", error));
       } else {
         audioRef.current.pause();
       }
@@ -70,7 +77,7 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, queue, 
   const handleTimeUpdate = (e: React.SyntheticEvent<HTMLAudioElement>) => {
     setCurrentTime(e.currentTarget.currentTime);
   };
-  
+
   const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLAudioElement>) => {
     setDuration(e.currentTarget.duration);
   };
@@ -80,7 +87,7 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, queue, 
     setVolume(newVolume);
   };
 
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (audioRef.current) {
       const newTime = parseFloat(e.target.value);
       audioRef.current.currentTime = newTime;
@@ -88,74 +95,93 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, queue, 
     }
   };
 
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const volumeProgress = volume * 100;
+
   return (
     <div className="fixed bottom-0 left-0 right-0 p-3 bg-accent text-fg z-50 transition-colors duration-300 ease-in-out">
       {isQueueOpen && (
-        <PlayQueue 
+        <PlayQueue
           queue={queue}
           currentTrack={track}
           onPlayTrack={onPlayTrack}
           onClose={() => setIsQueueOpen(false)}
         />
       )}
-      
+
       <audio
         ref={audioRef}
         src={track?.src}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={() => {
-            if (hasNext) handleNext();
-            else onTogglePlay();
+          if (hasNext) handleNext();
+          else onTogglePlay();
         }}
       />
-      
-      <div className="flex items-center gap-5">
-        <img src={track.cover} alt={track.title} className="w-16 h-16 rounded hidden md:block" />
 
-        <div className='flex-col w-full truncate'>
+      <div className="flex items-center gap-5">
+        <img
+          src={track.cover}
+          alt={track.title}
+          className="w-16 h-16 rounded hidden md:block"
+        />
+
+        <div className="flex-col w-full truncate">
           <div>
             <p className="font-bold">{track.title}</p>
             <p>{track.artist}</p>
           </div>
-          
+
           <div className="w-full flex items-center gap-2">
-            <span className="text-sm text-right">{formatTime(currentTime)}</span>
-              <input
-                type="range"
-                min={0}
-                max={duration || 0}
-                value={currentTime}
-                onChange={handleSeek}
-                className="w-full h-1 bg-gray-400 rounded-lg appearance-none cursor-pointer"
-              />
-              <span className="text-sm w-10 text-left">{formatTime(duration)}</span>
+            <span className="text-sm text-right">
+              {formatTime(currentTime)}
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={duration || 0}
+              value={currentTime}
+              onChange={handleSeek}
+              className="w-full h-1 bg-gray-400 rounded-lg appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right,
+                    #3b82f6 0%,
+                    #3b82f6 ${progress}%,
+                    #9ca3af ${progress}%,
+                    #9ca3af 100%
+                  )`,
+              }}
+            />
+            <span className="text-sm w-10 text-left">
+              {formatTime(duration)}
+            </span>
           </div>
         </div>
 
         <button onClick={() => setIsQueueOpen(!isQueueOpen)} title="Play Queue">
-          <PlaylistsIcon className='w-8 h-8 cursor-pointer fill-current'/>
+          <PlaylistsIcon className="w-8 h-8 cursor-pointer fill-current" />
         </button>
 
         <button onClick={handlePrev} disabled={!hasPrev}>
-          <SkipBackwardIcon className='w-8 h-8 cursor-pointer fill-current'/>
+          <SkipBackwardIcon className="w-8 h-8 cursor-pointer fill-current" />
         </button>
 
         <button onClick={onTogglePlay}>
           {isPlaying ? (
-            <PauseIcon className='w-6 h-6 cursor-pointer fill-current'/>
+            <PauseIcon className="w-6 h-6 cursor-pointer fill-current" />
           ) : (
-            <PlayIcon className='w-6 h-6 cursor-pointer fill-current'/>
+            <PlayIcon className="w-6 h-6 cursor-pointer fill-current" />
           )}
         </button>
 
         <button onClick={handleNext} disabled={!hasNext}>
-          <SkipForwardIcon className='w-8 h-8 cursor-pointer fill-current'/>
+          <SkipForwardIcon className="w-8 h-8 cursor-pointer fill-current" />
         </button>
 
-        <div className='hidden md:flex items-center gap-2'>
+        <div className="hidden md:flex items-center gap-2">
           <VolumeIcon className="w-6 h-6 fill-current" />
-          
+
           <input
             type="range"
             min={0}
@@ -164,6 +190,14 @@ const Player: React.FC<PlayerProps> = ({ track, isPlaying, onTogglePlay, queue, 
             value={volume}
             onChange={handleVolumeChange}
             className="w-24 h-1 bg-gray-400 rounded-lg appearance-none cursor-pointer"
+            style={{
+              background: `linear-gradient(to right,
+              #3b82f6 0%,
+              #3b82f6 ${volumeProgress}%,
+              #9ca3af ${volumeProgress}%,
+              #9ca3af 100%
+              )`,
+            }}
           />
         </div>
       </div>
