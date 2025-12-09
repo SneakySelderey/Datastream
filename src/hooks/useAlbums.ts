@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { type Album, type FilterState, type SortMode } from '../types';
 
 const seedAlbums: Album[] = [
-  { id: '1', title: 'Charon', artist: '1000 Eyes', date: '2025-01-01', cover: '/covers/charon.jpg', genres: ['Ambient'], tracklist: [], trackCount: 0, duration: '0', size: '0 MB' },
-  { id: '2', title: 'Schwanengesang', artist: '1000 Eyes', date: '2025-01-01', cover: '/covers/Schwanengesang.png', genres: ['Classical', 'Instrumental'], tracklist: [], trackCount: 0, duration: '0', size: '0 MB' },
+  { id: '1', title: 'Charon', artist: '1000 Eyes', artistId: '1', date: '2025-01-01', cover: '/covers/charon.jpg', genres: ['Ambient'], tracklist: [], trackCount: 0, duration: '0', size: '0 MB' },
+  { id: '2', title: 'Schwanengesang', artist: '1000 Eyes', artistId: '1', date: '2025-01-01', cover: '/covers/Schwanengesang.png', genres: ['Classical', 'Instrumental'], tracklist: [], trackCount: 0, duration: '0', size: '0 MB' },
 ];
 
 const allMockAlbums: Album[] = [];
