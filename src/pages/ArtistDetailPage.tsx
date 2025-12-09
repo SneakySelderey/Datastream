@@ -20,7 +20,7 @@ const ArtistDetailsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useLocalStorage<number>('artistAlbumsPerPage', 18);
 
-  const { artist, isLoading: isArtistLoading } = useArtist(artistId || '');
+  const { artist, isLoading: isArtistLoading, error: artistError } = useArtist(artistId || '');
 
   const { albums, total, isLoading, error } = useAlbums(
     currentPage, 
@@ -29,6 +29,10 @@ const ArtistDetailsPage = () => {
     'default', 
     artistId
   );
+
+  if (!artist) {
+    return <div className="p-8">{t('nothingFound')}</div>;
+  }
 
   const handleItemsPerPageChange = (newLimit: number) => {
     setItemsPerPage(newLimit);
