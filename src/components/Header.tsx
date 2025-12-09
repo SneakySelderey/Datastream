@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
       <div className='flex items-center gap-6'>
         <button
           onClick={onToggleSidebar}
-          className="text-fg"
+          className="text-fg transition-colors duration-300 ease-in-out"
           title={t('toggleSidebar')}
           aria-label="Toggle sidebar"
         >
