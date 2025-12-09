@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 import { usePlayer } from '../context/PlayerContext';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -82,6 +83,8 @@ const Player: React.FC = () => {
     }
   };
 
+  if (!currentTrack) return null;
+
   return (
     <div className="fixed bottom-0 left-0 right-0 p-3 bg-accent text-fg z-50 transition-colors duration-300 ease-in-out">
       {isQueueOpen && (
@@ -110,7 +113,22 @@ const Player: React.FC = () => {
         <div className='flex-col w-full truncate'>
           <div>
             <p className="font-bold">{currentTrack.title}</p>
-            <p>{currentTrack.artist}</p>
+
+            <div className="truncate">
+              <Link
+                to={`/artists/${currentTrack.artistId}`}
+                className="text-link hover:underline hover:text-primary transition-colors"
+              >
+                {currentTrack.artist}
+              </Link>
+              <span className="mx-1">&bull;</span>
+              <Link 
+                to={`/albums/${currentTrack.albumId}`}
+                className="text-link hover:underline hover:text-primary transition-colors"
+              >
+                {currentTrack.album}
+              </Link>
+            </div>
           </div>
           
           <div className="w-full flex items-center gap-2">
