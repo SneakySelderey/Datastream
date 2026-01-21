@@ -3,5 +3,8 @@
   "private": true,
   "workspaces": [
     "apps/*"
-  ]
+  ],
+  "dependencies": {
+    "music-metadata": "^11.10.6"
+  }
 }
