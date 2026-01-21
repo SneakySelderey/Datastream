@@ -142,7 +142,7 @@ const Player: React.FC = () => {
 
           <div className="w-full flex items-center gap-2">
             <span className="text-sm text-right">{formatTime(currentTime)}</span>
-              ф
+            
             <input
               type="range"
               min={0}
@@ -160,6 +160,7 @@ const Player: React.FC = () => {
                 )`,
               }}
               />
+
             <span className="text-sm w-10 text-left">{formatTime(duration)}</span>
           </div>
         </div>

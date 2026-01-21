@@ -42,7 +42,7 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
               <button
                 key={genre}
                 onClick={() => handleGenreClick(genre)}
-                className='px-3 py-1 text-sm cursor-pointer rounded-full border border-fg/20 hover:bg-fg/10 hover:border-fg/40 transition-colors'
+                className='px-3 py-1 text-sm cursor-pointer rounded-full border border-fg/25 hover:bg-fg/10 hover:border-fg/40 transition-colors'
               >
                 {genre}
               </button>

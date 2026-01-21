@@ -85,7 +85,7 @@ const Tracklist: React.FC<TracklistProps> = ({
           ${desktopGridClass}`}>
 
         <div className="col-span-full grid grid-cols-subgrid gap-x-6 items-center
-            text-fg font-bold p-3 border border-fg/10 rounded-t-xl transition-all duration-300 ease-in-out">
+            text-fg font-bold p-3 border border-fg/25 rounded-t-xl transition-all duration-300 ease-in-out">
 
           <div className="flex items-center justify-center w-5">
             <input
@@ -121,7 +121,7 @@ const Tracklist: React.FC<TracklistProps> = ({
               key={track.id}
               onClick={() => { if (!showAlbum) { onPlayTrack(track, tracks) } else { onPlayTrack(track, [track]) } }}
               className="col-span-full grid grid-cols-subgrid gap-x-6 items-center px-3
-                      border-x border-b border-fg/10 hover:bg-accent transition-colors
+                      border-x border-b border-fg/25 hover:bg-accent transition-colors
                       last:rounded-b-xl last:shadow-sm cursor-pointer"
             >
               <div className="flex items-center justify-center w-5 py-3">

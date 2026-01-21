@@ -47,7 +47,8 @@ const resources = {
       "sortNewest": "Recently Added",
       "sortPlayed": "Recently Played",
       "sortPopular": "Most Played",
-      "album": "Album"
+      "album": "Album",
+      "addToPlaylist": "Add to playlist"
     }
   },
   ru: {
@@ -95,7 +96,8 @@ const resources = {
       "sortNewest": "Недавно добавленные",
       "sortPlayed": "Недавно прослушанные",
       "sortPopular": "Чаще всего проигрываемые",
-      "album": "Альбом"
+      "album": "Альбом",
+      "addToPlaylist": "Добавить в плейлист"
     }
   }
 };
