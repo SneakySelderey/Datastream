@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 import { usePlayer } from '../context/PlayerContext';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -74,22 +75,24 @@ const Player: React.FC = () => {
     setVolume(newVolume);
   };
 
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (audioRef.current) {
       const newTime = parseFloat(e.target.value);
       audioRef.current.currentTime = newTime;
       setCurrentTime(newTime);
     }
   };
+  
+  const clampedCurrentTime =
+    duration > 0 ? Math.min(Math.max(currentTime, 0), duration) : 0;
 
-const clampedCurrentTime =
-  duration > 0 ? Math.min(Math.max(currentTime, 0), duration) : 0;
-
-const progress =
-  duration > 0
-    ? Math.min(100, Math.max(0, (clampedCurrentTime / duration) * 100))
-    : 0;
-const volumeProgress = Math.min(100, Math.max(0, volume * 100));
+  const progress =
+    duration > 0
+      ? Math.min(100, Math.max(0, (clampedCurrentTime / duration) * 100))
+      : 0;
+  const volumeProgress = Math.min(100, Math.max(0, volume * 100));
+    
+  if (!currentTrack) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 p-3 bg-accent text-fg z-50 transition-colors duration-300 ease-in-out">
@@ -119,7 +122,22 @@ const volumeProgress = Math.min(100, Math.max(0, volume * 100));
         <div className='flex-col w-full truncate'>
           <div>
             <p className="font-bold">{currentTrack.title}</p>
-            <p>{currentTrack.artist}</p>
+
+            <div className="truncate">
+              <Link
+                to={`/artists/${currentTrack.artistId}`}
+                className="text-link hover:underline hover:text-primary transition-colors"
+              >
+                {currentTrack.artist}
+              </Link>
+              <span className="mx-1">&bull;</span>
+              <Link 
+                to={`/albums/${currentTrack.albumId}`}
+                className="text-link hover:underline hover:text-primary transition-colors"
+              >
+                {currentTrack.album}
+              </Link>
+            </div>
           </div>
 
           <div className="w-full flex items-center gap-2">

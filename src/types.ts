@@ -21,6 +21,7 @@ export interface Album {
   id: string;
   title: string;
   artist: string;
+  artistId: string;
   cover: string;
   date: string;
   genres: string[];

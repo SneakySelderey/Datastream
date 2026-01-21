@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { type Album } from '../types';
 
 const seedPlaylists: Album[] = [
-  { id: '1', title: 'Chill Vibes', artist: 'User', date: '2025-11-25', cover: '/covers/chill-vibes.jpg', genres: [], tracklist: [], trackCount: 0, duration: '0', size: '0' },
-  { id: '2', title: 'Workout', artist: 'User', date: '2025-11-25', cover: '/covers/workout.jpg', genres: [], tracklist: [], trackCount: 0, duration: '0', size: '0' },
-  { id: '3', title: 'Road Trip', artist: 'User', date: '2025-11-25', cover: '/covers/road-trip.jpg', genres: [], tracklist: [], trackCount: 0, duration: '0', size: '0' },
+  { id: '1', title: 'Chill Vibes', artist: 'User', artistId: '11', date: '2025-11-25', cover: '/covers/chill-vibes.jpg', genres: [], tracklist: [], trackCount: 0, duration: '0', size: '0' },
+  { id: '2', title: 'Workout', artist: 'User', artistId: '11', date: '2025-11-25', cover: '/covers/workout.jpg', genres: [], tracklist: [], trackCount: 0, duration: '0', size: '0' },
+  { id: '3', title: 'Road Trip', artist: 'User', artistId: '11', date: '2025-11-25', cover: '/covers/road-trip.jpg', genres: [], tracklist: [], trackCount: 0, duration: '0', size: '0' },
 ];
 
 const allMockPlaylists: Album[] = [];

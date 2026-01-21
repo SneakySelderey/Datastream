@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { type Album } from '../types';
 
 interface AlbumHeaderProps {
@@ -22,7 +22,16 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
       />
       <div className='flex flex-col pt-2 gap-1'>
         <h1 className='text-2xl'>{album.title}</h1>
-        <h2>{album.artist}</h2>
+
+        <h2>
+          <Link 
+            to={`/artists/${album.artistId}`} 
+            className="hover:underline hover:text-primary transition-colors text-link"
+          >
+            {album.artist}
+          </Link>
+        </h2>
+
         <p>
           {album.date} &bull; {album.trackCount} Songs &bull; {album.duration} &bull; {album.size}
         </p>
