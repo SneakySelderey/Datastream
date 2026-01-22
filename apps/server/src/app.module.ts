@@ -5,6 +5,7 @@ import { ScannerModule } from './modules/scanner/scanner.module';
 import { ConfigModule } from '@nestjs/config';
 import { StreamController } from './modules/stream/stream.controller';
 import { AlbumsModule } from './modules/albums/albums.module';
+import { PrismaModule } from './modules/prisma/prisma.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { AlbumsModule } from './modules/albums/albums.module';
       envFilePath: '.env',
     }),
     ScannerModule,
-    AlbumsModule
+    AlbumsModule,
+    PrismaModule
   ],
   controllers: [AppController, StreamController],
   providers: [AppService],

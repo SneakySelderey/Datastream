@@ -2,7 +2,7 @@ import { Controller, Get, Param, Res, StreamableFile, NotFoundException, Header 
 import { type Response } from 'express';
 import { createReadStream, existsSync, statSync } from 'fs';
 import { join } from 'path';
-import { PrismaService } from '../../prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('stream')
 export class StreamController {
