@@ -7,8 +7,8 @@ import { glob } from 'glob';
 @Injectable()
 export class ScannerService implements OnModuleInit {
   private readonly logger = new Logger(ScannerService.name);
-  private musicPath = process.env.MUSIC_LIBRARY_PATH;
-  private coversCachePath = path.join(process.cwd(), 'uploads', 'covers');
+  private musicPath = process.env.MUSIC_PATH;
+  private coversCachePath = path.join(process.cwd(), 'covers');
 
   constructor(private prisma: PrismaService) {}
 
