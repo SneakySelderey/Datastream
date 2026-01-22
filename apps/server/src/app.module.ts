@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ScannerModule } from './modules/scanner/scanner.module';
 import { ConfigModule } from '@nestjs/config';
+import { StreamController } from './modules/stream/stream.controller';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { ConfigModule } from '@nestjs/config';
     }),
     ScannerModule
   ],
-  controllers: [AppController],
+  controllers: [AppController, StreamController],
   providers: [AppService],
 })
 export class AppModule {}
