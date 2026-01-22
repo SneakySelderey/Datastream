@@ -9,11 +9,9 @@ CREATE TABLE "Artist" (
 CREATE TABLE "Album" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "title" TEXT NOT NULL,
-    "artistId" TEXT NOT NULL,
     "date" DATETIME,
     "coverPath" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "Album_artistId_fkey" FOREIGN KEY ("artistId") REFERENCES "Artist" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- CreateTable
@@ -36,12 +34,26 @@ CREATE TABLE "Track" (
     "filePath" TEXT NOT NULL,
     "fileName" TEXT NOT NULL,
     "format" TEXT NOT NULL,
-    "artistId" TEXT,
     "albumId" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Track_artistId_fkey" FOREIGN KEY ("artistId") REFERENCES "Artist" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT "Track_albumId_fkey" FOREIGN KEY ("albumId") REFERENCES "Album" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "_ArtistToTrack" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+    CONSTRAINT "_ArtistToTrack_A_fkey" FOREIGN KEY ("A") REFERENCES "Artist" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "_ArtistToTrack_B_fkey" FOREIGN KEY ("B") REFERENCES "Track" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "_AlbumToArtist" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+    CONSTRAINT "_AlbumToArtist_A_fkey" FOREIGN KEY ("A") REFERENCES "Album" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "_AlbumToArtist_B_fkey" FOREIGN KEY ("B") REFERENCES "Artist" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -56,13 +68,22 @@ CREATE TABLE "_GenreToTrack" (
 CREATE UNIQUE INDEX "Artist_name_key" ON "Artist"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Album_title_artistId_key" ON "Album"("title", "artistId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Genre_name_key" ON "Genre"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Track_filePath_key" ON "Track"("filePath");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_ArtistToTrack_AB_unique" ON "_ArtistToTrack"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_ArtistToTrack_B_index" ON "_ArtistToTrack"("B");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_AlbumToArtist_AB_unique" ON "_AlbumToArtist"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_AlbumToArtist_B_index" ON "_AlbumToArtist"("B");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_GenreToTrack_AB_unique" ON "_GenreToTrack"("A", "B");

@@ -18,8 +18,7 @@ model Album {
   id        String   @id @default(uuid())
   title     String
   
-  artistId  String
-  artist    Artist   @relation(fields: [artistId], references: [id])
+  artists    Artist[]
   
   tracks    Track[]
   
@@ -27,8 +26,6 @@ model Album {
   coverPath String?
   
   createdAt DateTime @default(now())
-  
-  @@unique([title, artistId])
 }
 
 model Genre {
@@ -56,8 +53,7 @@ model Track {
   fileName    String
   format      String
   
-  artistId    String?
-  artist      Artist?  @relation(fields: [artistId], references: [id])
+  artists      Artist[]
   
   albumId     String?
   album       Album?   @relation(fields: [albumId], references: [id])
