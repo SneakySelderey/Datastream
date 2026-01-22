@@ -1,26 +1,52 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAlbumDto } from './dto/create-album.dto';
-import { UpdateAlbumDto } from './dto/update-album.dto';
+import { PrismaService } from '../../prisma.service';
 
 @Injectable()
 export class AlbumsService {
-  create(createAlbumDto: CreateAlbumDto) {
-    return 'This action adds a new album';
-  }
+  constructor(private prisma: PrismaService) {}
 
-  findAll() {
-    return `This action returns all albums`;
-  }
+  async findAll() {
+    const albums = await this.prisma.album.findMany({
+      include: {
+        artists: true,
+        tracks: true,
+      },
+      orderBy: { title: 'asc' }
+    });
 
-  findOne(id: number) {
-    return `This action returns a #${id} album`;
+    return albums.map((album) => ({
+      id: album.id,
+      title: album.title,
+      artist: album.artists.map(a => a.name).join(', ') || 'Unknown',
+      artistId: album.artists[0]?.id,
+      date: album.date,
+      cover: album.coverPath 
+        ? `http://localhost:3000/stream/cover/${album.coverPath}` 
+        : null, 
+      trackCount: album.tracks.length,
+    }));
   }
+  
+  async findOne(id: string) {
+    const album = await this.prisma.album.findUnique({
+        where: { id },
+        include: { artists: true, tracks: { include: { artists: true }, orderBy: { number: 'asc' } } }
+    });
+    
+    if (!album) return null;
 
-  update(id: number, updateAlbumDto: UpdateAlbumDto) {
-    return `This action updates a #${id} album`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} album`;
+    return {
+        ...album,
+        artist: album.artists.map(a => a.name).join(', '),
+        cover: album.coverPath ? `http://localhost:3000/stream/cover/${album.coverPath}` : null,
+        tracks: album.tracks.map(t => ({
+            id: t.id,
+            title: t.title,
+            number: t.number,
+            duration: t.duration,
+            src: `http://localhost:3000/stream/track/${t.id}`, 
+            artist: t.artists.map(a => a.name).join(', ')
+        }))
+    }
   }
 }
