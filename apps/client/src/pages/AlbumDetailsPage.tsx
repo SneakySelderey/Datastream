@@ -81,7 +81,7 @@ const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ type = 'album' }) =
 
       <div className="mt-8">
         <Tracklist
-          tracks={album.tracklist}
+          tracks={album.tracks}
           onPlayTrack={playTrack}
           selectedIds={selectedTrackIds}
           onSelectionChange={setSelectedTrackIds}

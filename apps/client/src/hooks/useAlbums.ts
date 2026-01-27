@@ -2,22 +2,6 @@ import { useState, useEffect } from 'react';
 
 import { type Album, type FilterState, type SortMode } from '../types';
 
-const seedAlbums: Album[] = [
-  { id: '1', title: 'Charon', artist: '1000 Eyes', artistId: '1', date: '2025-01-01', cover: '/covers/charon.jpg', genres: ['Ambient'], tracklist: [], trackCount: 0, duration: '0', size: '0 MB' },
-  { id: '2', title: 'Schwanengesang', artist: '1000 Eyes', artistId: '1', date: '2025-01-01', cover: '/covers/Schwanengesang.png', genres: ['Classical', 'Instrumental'], tracklist: [], trackCount: 0, duration: '0', size: '0 MB' },
-];
-
-const allMockAlbums: Album[] = [];
-
-for (let i = 0; i < 100; i++) {
-  const template = seedAlbums[i % seedAlbums.length];
-
-  allMockAlbums.push({
-    ...template,
-    id: `${i+1}`
-  });
-}
-
 const DEFAULT_FILTERS: FilterState = {
   search: '',
   genre: '',
@@ -38,40 +22,32 @@ export const useAlbums = (
   const availableYears = ['2025'];
 
   useEffect(() => {
-    const fetchAlbums = () => {
+    const fetchAlbums = async () => {
       setIsLoading(true);
 
       try {
-        let result = [...allMockAlbums];
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+            search: filters.search || '',
+            genre: filters.genre || '',
+            year: filters.year || '',
+            artistId: artistId || '',
+            sort: sortMode
+        });
 
-        if (artistId) {
-          // tell backend to filter by artistId
-        }
+        const response = await fetch(`/api/albums?${params}`);
 
-        if (sortMode === 'random') {
-          // tell backend to return random albums
-        }
-        else if (sortMode === 'recently-added') {
-          // tell backend to return recently added albums
-        }
-        else if (sortMode === 'recently-played') {
-          // tell backend to return recently played albums
-        }
-        else if (sortMode === 'most-played') {
-          // tell backend to return most played albums
-        }
-        else {
-           // ...
+        if (!response.ok) {
+            throw new Error('Failed to fetch albums');
         }
 
-        const filteredTotal = result.length;
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        
-        setAlbums(result.slice(startIndex, endIndex));
-        setTotal(filteredTotal);
+        const data = await response.json();
+
+        setAlbums(data);
+        setTotal(data.length);
       } catch (e) {
-        setError('Cannot load album.');
+        setError('Cannot load albums.');
         console.error(e);
       } finally {
         setIsLoading(false);
