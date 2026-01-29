@@ -59,6 +59,8 @@ model Track {
   
   albumId     String?
   album       Album?   @relation(fields: [albumId], references: [id])
+
+  coverPath   String?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class ScannerService implements OnModuleInit {
@@ -23,6 +24,22 @@ export class ScannerService implements OnModuleInit {
     }
 
     await this.scanLibrary();
+  }
+
+  private saveCover(picture: any): string | null {
+    if (!picture) return null;
+
+    const hash = crypto.createHash('md5').update(picture.data).digest('hex');
+    
+    const ext = picture.format === 'image/png' ? 'png' : 'jpg';
+    const filename = `${hash}.${ext}`;
+    const savePath = path.join(this.coversCachePath, filename);
+
+    if (!fs.existsSync(savePath)) {
+      fs.writeFileSync(savePath, picture.data);
+    }
+
+    return filename;
   }
 
   async scanLibrary() {
@@ -56,6 +73,8 @@ export class ScannerService implements OnModuleInit {
         if (common.date) releaseDate = common.date;
         else if (common.year) releaseDate = common.year.toString() + '-01-01';
 
+        const coverFilename = this.saveCover(common.picture?.[0]);
+
         let album = await this.prisma.album.findFirst({
           where: {
             title: albumTitle,
@@ -75,23 +94,17 @@ export class ScannerService implements OnModuleInit {
                     where: { name },
                     create: { name }
                 }))
-              }
+              },
+              coverPath: coverFilename
             }
           });
         }
 
-        if (!album.coverPath && common.picture?.length) {
-          const picture = common.picture[0];
-          const ext = picture.format === 'image/png' ? 'png' : 'jpg';
-          const coverFilename = `${album.id}.${ext}`;
-          const savePath = path.join(this.coversCachePath, coverFilename);
-
-          fs.writeFileSync(savePath, picture.data);
-
-          album = await this.prisma.album.update({
-            where: { id: album.id },
-            data: { coverPath: coverFilename },
-          });
+        else if (!album.coverPath && coverFilename) {
+           album = await this.prisma.album.update({
+             where: { id: album.id },
+             data: { coverPath: coverFilename }
+           });
         }
 
         await this.prisma.track.create({
@@ -105,6 +118,7 @@ export class ScannerService implements OnModuleInit {
             size: fs.statSync(filePath).size,
             filePath: filePath,
             fileName: path.basename(filePath),
+            coverPath: coverFilename,
             format: format.container || 'unknown',
             date: releaseDate,
             

@@ -42,13 +42,16 @@ export class AlbumsService {
         tracks: album.tracks.map(t => ({
             id: t.id,
             title: t.title,
+            albumId: album.id,
+            album: album.title,
             number: t.number,
             duration: t.duration,
             src: `http://localhost:3000/stream/track/${t.id}`, 
             artist: t.artists.map(a => a.name).join(', '),
             size: t.size,
             format: t.format,
-            genres: t.genres.map(g => g.name)
+            genres: t.genres.map(g => g.name),
+            cover: t.coverPath ? `http://localhost:3000/stream/cover/${t.coverPath}` : null,
         })),
         trackCount: album.tracks.length,
         size: album.tracks.reduce((acc, t) => acc + t.size, 0).toString(),
