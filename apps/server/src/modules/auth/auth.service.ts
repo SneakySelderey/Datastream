@@ -1,12 +1,18 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { LoginDto } from './dto/login.dto';
+import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService
+  ) {}
   
   async create(createAuthDto: CreateAuthDto) {
     const existingUser = await this.prisma.user.findUnique({
@@ -31,14 +37,6 @@ export class AuthService {
     return result;
   }
 
-  findAll() {
-    return `This action returns all auth`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
   async updatePassword(changePasswordDto: ChangePasswordDto) {
     const user = await this.prisma.user.findUnique({
       where: { id: changePasswordDto.id }
@@ -56,6 +54,35 @@ export class AuthService {
     });
 
     return { message: 'Password updated successfully' };
+  }
+
+  async login(loginDto: LoginDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { name: loginDto.name },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid password');
+    }
+
+    const payload = { sub: user.id, name: user.name };
+    const token = this.jwtService.sign(payload);
+
+    return { access_token: token };
+  }
+
+  findAll() {
+    return `This action returns all auth`;
+  }
+
+  findOne(id: number) {
+    return `This action returns a #${id} auth`;
   }
 
   remove(id: number) {
