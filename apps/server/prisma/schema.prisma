@@ -24,7 +24,7 @@ model Album {
   
   tracks    Track[]
   
-  date      DateTime?
+  date      String?
   coverPath String?
   
   createdAt DateTime @default(now())
@@ -44,7 +44,7 @@ model Track {
   totalNumber Int?
   discNumber  Int      @default(1)
   
-  date        DateTime?
+  date        String?
   genres      Genre[]
   
   duration    Float

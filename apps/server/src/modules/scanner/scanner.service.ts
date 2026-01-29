@@ -52,9 +52,9 @@ export class ScannerService implements OnModuleInit {
         const genres = common.genre || [];
         const albumTitle = common.album || 'Unknown Album';
         
-        let releaseDate: Date | null = null;
-        if (common.date) releaseDate = new Date(common.date);
-        else if (common.year) releaseDate = new Date(common.year, 0, 1);
+        let releaseDate: string | null = null;
+        if (common.date) releaseDate = common.date;
+        else if (common.year) releaseDate = common.year.toString() + '-01-01';
 
         let album = await this.prisma.album.findFirst({
           where: {
