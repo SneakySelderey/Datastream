@@ -140,7 +140,7 @@ const Tracklist: React.FC<TracklistProps> = ({
 
               <Link
                 to={`/artists/${track.artistId}`}
-                className="hover:underline relative text-link"
+                className="hover:underline relative text-link text-left"
                 onClick={(e) => e.stopPropagation()}
               >
                 {track.artist}
