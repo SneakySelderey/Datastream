@@ -61,6 +61,15 @@ const Tracklist: React.FC<TracklistProps> = ({
     if (onSelectionChange) onSelectionChange([]);
   };
 
+  const formatTime = (timeInSeconds: number): string => {
+    if (!timeInSeconds || isNaN(timeInSeconds)) return '00:00';
+
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
+
   return (
     <div>
       {selectedIds.length > 0 && onSelectionChange && (
@@ -84,7 +93,7 @@ const Tracklist: React.FC<TracklistProps> = ({
           grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,1fr)_auto]
           ${desktopGridClass}`}>
 
-        <div className="col-span-full grid grid-cols-subgrid gap-x-6 items-center
+        <div className="col-span-full grid grid-cols-subgrid gap-x-6 items-center text-center
             text-fg font-bold p-3 border border-fg/25 rounded-t-xl transition-all duration-300 ease-in-out">
 
           <div className="flex items-center justify-center w-5">
@@ -97,9 +106,9 @@ const Tracklist: React.FC<TracklistProps> = ({
             />
           </div>
 
-          <p className="text-center">#</p>
-          <p>{t('trackTitle')}</p>
-          <p>{t('artist')}</p>
+          <p>#</p>
+          <p className="text-left">{t('trackTitle')}</p>
+          <p className="text-left">{t('artist')}</p>
 
           {showAlbum && (
             <p className="hidden md:block">{t('album')}</p>
@@ -120,7 +129,7 @@ const Tracklist: React.FC<TracklistProps> = ({
             <div
               key={track.id}
               onClick={() => { if (!showAlbum) { onPlayTrack(track, tracks) } else { onPlayTrack(track, [track]) } }}
-              className="col-span-full grid grid-cols-subgrid gap-x-6 items-center px-3
+              className="col-span-full grid grid-cols-subgrid gap-x-6 items-center text-center px-3
                       border-x border-b border-fg/25 hover:bg-accent transition-colors
                       last:rounded-b-xl last:shadow-sm cursor-pointer"
             >
@@ -135,8 +144,8 @@ const Tracklist: React.FC<TracklistProps> = ({
                 />
               </div>
 
-              <p className="text-center py-3">{index + 1}</p>
-              <p className="truncate">{track.title}</p>
+              <p className="py-3">{index + 1}</p>
+              <p className="text-left truncate">{track.title}</p>
 
               <Link
                 to={`/artists/${track.artistId}`}
@@ -158,7 +167,7 @@ const Tracklist: React.FC<TracklistProps> = ({
                 </div>
               )}
 
-              <p>{track.duration}</p>
+              <p>{formatTime(Number(track.duration))}</p>
               <p className="hidden md:block">{track.plays}</p>
               <p className="hidden md:block">{track.quality}</p>
               <p className="hidden md:block">{track.size}</p>
