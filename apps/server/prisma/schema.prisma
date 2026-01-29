@@ -48,8 +48,8 @@ model Track {
   genres      Genre[]
   
   duration    Float
-  bitrate     Int?
-  size        Int?
+  bitrate     Int
+  size        Int
   
   filePath    String   @unique
   fileName    String

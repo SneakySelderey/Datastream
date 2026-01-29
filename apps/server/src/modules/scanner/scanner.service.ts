@@ -101,7 +101,7 @@ export class ScannerService implements OnModuleInit {
             totalNumber: common.track.of || null,
             discNumber: common.disk.no || 1,
             duration: format.duration || 0,
-            bitrate: format.bitrate || null,
+            bitrate: format.bitrate || 0,
             size: fs.statSync(filePath).size,
             filePath: filePath,
             fileName: path.basename(filePath),

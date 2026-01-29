@@ -30,7 +30,7 @@ export class AlbumsService {
   async findOne(id: string) {
     const album = await this.prisma.album.findUnique({
         where: { id },
-        include: { artists: true, tracks: { include: { artists: true }, orderBy: { number: 'asc' } } }
+        include: { artists: true, tracks: { include: { artists: true, genres: true }, orderBy: { number: 'asc' } } }
     });
     
     if (!album) return null;
@@ -45,8 +45,14 @@ export class AlbumsService {
             number: t.number,
             duration: t.duration,
             src: `http://localhost:3000/stream/track/${t.id}`, 
-            artist: t.artists.map(a => a.name).join(', ')
-        }))
+            artist: t.artists.map(a => a.name).join(', '),
+            size: t.size,
+            format: t.format,
+            genres: t.genres.map(g => g.name)
+        })),
+        trackCount: album.tracks.length,
+        size: album.tracks.reduce((acc, t) => acc + t.size, 0).toString(),
+        duration: album.tracks.reduce((acc, t) => acc + t.duration, 0).toString()
     }
   }
 }

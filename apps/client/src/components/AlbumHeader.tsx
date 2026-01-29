@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { type Album } from '../types';
+import { type Album, formatTime } from '../types';
 
 interface AlbumHeaderProps {
   album: Album;
@@ -33,7 +33,7 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
         </h2>
 
         <p>
-          {album.date} &bull; {album.trackCount} Songs &bull; {album.duration} &bull; {album.size}
+          {album.date} &bull; {album.trackCount} Songs &bull; {formatTime(Number(album.duration))} &bull; {(Number(album.size) / 1048576).toFixed(2)} MB
         </p>
 
         {album.genres && album.genres.length > 0 && (

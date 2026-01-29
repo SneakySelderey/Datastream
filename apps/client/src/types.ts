@@ -11,9 +11,9 @@ export interface Track {
   src: string;
   cover: string;
   duration: string;
-  quality: string;
+  format: string;
   plays: number;
-  size: string;
+  size: number;
   genres: string[];
 }
 
@@ -47,3 +47,12 @@ export interface Artist {
   size: string;
   plays: number;
 }
+
+export const formatTime = (timeInSeconds: number): string => {
+  if (!timeInSeconds || isNaN(timeInSeconds)) return '00:00';
+
+  const minutes = Math.floor(timeInSeconds / 60);
+  const seconds = Math.floor(timeInSeconds % 60);
+
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};

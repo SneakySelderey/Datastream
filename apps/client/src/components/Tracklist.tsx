@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { TracklistModal } from './TracklistModal';
 
-import { type Track } from '../types';
+import { type Track, formatTime } from '../types';
 
 interface TracklistProps {
   tracks: Track[];
@@ -60,15 +60,6 @@ const Tracklist: React.FC<TracklistProps> = ({
     setIsModalOpen(false);
     if (onSelectionChange) onSelectionChange([]);
   };
-
-  const formatTime = (timeInSeconds: number): string => {
-    if (!timeInSeconds || isNaN(timeInSeconds)) return '00:00';
-
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = Math.floor(timeInSeconds % 60);
-
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-};
 
   return (
     <div>
@@ -169,8 +160,8 @@ const Tracklist: React.FC<TracklistProps> = ({
 
               <p>{formatTime(Number(track.duration))}</p>
               <p className="hidden md:block">{track.plays}</p>
-              <p className="hidden md:block">{track.quality}</p>
-              <p className="hidden md:block">{track.size}</p>
+              <p className="hidden md:block">{track.format}</p>
+              <p className="hidden md:block">{(track.size / 1048576).toFixed(2)} MB</p>
               <p className="hidden md:block truncate">{Array.isArray(track.genres) ? track.genres.join(', ') : ''}</p>
               <div className="hidden md:flex justify-center">...</div>
             </div>
