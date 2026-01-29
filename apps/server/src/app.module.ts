@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { StreamController } from './modules/stream/stream.controller';
 import { AlbumsModule } from './modules/albums/albums.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { PrismaModule } from './modules/prisma/prisma.module';
     }),
     ScannerModule,
     AlbumsModule,
-    PrismaModule
+    PrismaModule,
+    AuthModule
   ],
   controllers: [AppController, StreamController],
   providers: [AppService],
