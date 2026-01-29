@@ -12,13 +12,7 @@ import SkipForwardIcon from '../assets/skip-forward.svg?react';
 import PlaylistsIcon from '../assets/playlists.svg?react';
 
 import PlayQueue from './PlayQueue';
-
-const formatTime = (timeInSeconds: number): string => {
-  if (isNaN(timeInSeconds)) return '00:00';
-  const minutes = Math.floor(timeInSeconds / 60);
-  const seconds = Math.floor(timeInSeconds % 60);
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-};
+import { formatTime } from '../types';
 
 const Player: React.FC = () => {
   const { currentTrack, isPlaying, queue, togglePlay, setTrack } = usePlayer();
