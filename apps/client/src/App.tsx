@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import AuthPage from './pages/AuthPage';
@@ -10,38 +10,41 @@ import ArtistDetailsPage from './pages/ArtistDetailPage';
 import TracksPage from './pages/TracksPage';
 import PlaylistsPage from './pages/PlaylistsPage';
 
-import Header from './components/Header'
+import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Player from './components/Player';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { PublicRoute } from './components/PublicRoute';
 
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { PlayerProvider } from './context/PlayerContext'; 
+import { useAuth } from './hooks/useAuth';
+import { PlayerProvider } from './context/PlayerContext';
 import { AuthProvider } from './context/AuthContext';
 
 import { type Theme } from './types';
 
-function App() {
+function AppContent() {
   const [currentTheme, setCurrentTheme] = useLocalStorage<Theme>('app-theme', 'light');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
+  
+  const { user } = useAuth();
   const location = useLocation();
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   const handleThemeChange = () => {
-    setCurrentTheme(currentTheme == 'light' ? 'dark' : 'light');
-  }
+    setCurrentTheme(currentTheme === 'light' ? 'dark' : 'light');
+  };
 
   const handleToggleSidebar = () => {
     setIsSidebarOpen(prev => !prev);
-  }
+  };
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', currentTheme === 'dark')
-  }, [currentTheme])
+    document.documentElement.classList.toggle('dark', currentTheme === 'dark');
+  }, [currentTheme]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 768px)');
-    
     setIsSidebarOpen(mediaQuery.matches);
 
     const handleResize = (e: MediaQueryListEvent) => {
@@ -49,48 +52,53 @@ function App() {
     };
 
     mediaQuery.addEventListener('change', handleResize);
-
     return () => mediaQuery.removeEventListener('change', handleResize);
   }, []);
 
   return (
-    <AuthProvider>
-      <PlayerProvider>
-        <div className='min-h-screen bg-bg text-fg transition-colors duration-300 ease-in-out'>
-          {!isAuthPage && (
-            <>
-              <Header
-                onChangeTheme={handleThemeChange}
-                onToggleSidebar={handleToggleSidebar}
-              />
+    <PlayerProvider>
+      <div className="min-h-screen bg-bg text-fg transition-colors duration-300 ease-in-out">
+        {user && !isAuthPage && (
+          <>
+            <Header onChangeTheme={handleThemeChange} onToggleSidebar={handleToggleSidebar} />
+            <Sidebar isOpen={isSidebarOpen} />
+            <Player />
+          </>
+        )}
 
-              <Sidebar isOpen={isSidebarOpen} />
+        <main
+          className={`transition-all duration-300 ease-in-out
+            ${user && !isAuthPage ? 'pt-12 pb-24' : ''} 
+            ${user && !isAuthPage && isSidebarOpen ? 'md:ml-55' : ''}`}
+        >
+          <Routes>
+            <Route path="/login" element={<PublicRoute><AuthPage mode="login" /></PublicRoute>} />
+            <Route path="/register" element={<PublicRoute><AuthPage mode="register" /></PublicRoute>} />
 
-              <Player/>
-            </>
-          )}
+            <Route path="/" element={<ProtectedRoute><Navigate to="/albums" replace /></ProtectedRoute>} />
+            <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
+            <Route path="/albums" element={<ProtectedRoute><AlbumsPage /></ProtectedRoute>} />
+            <Route path="/albums/:id" element={<ProtectedRoute><AlbumDetailsPages /></ProtectedRoute>} />
+            <Route path="/artists" element={<ProtectedRoute><ArtistsPage /></ProtectedRoute>} />
+            <Route path="/artists/:id" element={<ProtectedRoute><ArtistDetailsPage /></ProtectedRoute>} />
+            <Route path="/songs" element={<ProtectedRoute><TracksPage /></ProtectedRoute>} />
+            <Route path="/playlists" element={<ProtectedRoute><PlaylistsPage /></ProtectedRoute>} />
+            <Route path="/playlists/:id" element={<ProtectedRoute><AlbumDetailsPages type="playlist" /></ProtectedRoute>} />
 
-          <main className={`pt-12 pb-24 transition-all duration-300 ease-in-out
-            ${!isAuthPage ? 'pt-12 pb-24' : ''} 
-            ${!isAuthPage && isSidebarOpen ? 'md:ml-55' : ''}`}>
-            <Routes>
-              <Route path="/" element={<Navigate to="/albums" replace />} />
-              <Route path="/login" element={<AuthPage mode="login" />} />
-              <Route path="/register" element={<AuthPage mode="register" />} />
-              <Route path="/account" element={<AccountPage />} />
-              <Route path="/albums" element={<AlbumsPage />} />
-              <Route path="/albums/:id" element={<AlbumDetailsPages />} />
-              <Route path="/artists" element={<ArtistsPage />} />
-              <Route path="/artists/:id" element={<ArtistDetailsPage />} />
-              <Route path="/songs" element={<TracksPage />} />
-              <Route path="/playlists" element={<PlaylistsPage />} />
-              <Route path="/playlists/:id" element={<AlbumDetailsPages type="playlist" />} />
-            </Routes>
-          </main>
-        </div>
-      </PlayerProvider>
-    </AuthProvider>
-  )
+            <Route path="*" element={<Navigate to="/albums" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </PlayerProvider>
+  );
 }
 
-export default App
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+export default App;

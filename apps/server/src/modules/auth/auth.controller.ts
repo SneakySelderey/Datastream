@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { Public } from './public.decorator';
 import { Res } from '@nestjs/common';
-import { type Response } from 'express';
+import { type Response, type Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -50,6 +50,11 @@ export class AuthController {
   logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('access_token');
     return { message: 'Logged out' };
+  }
+
+  @Get('me')
+  async me(@Req() req: Request) {
+    return { user: req.user };
   }
 
   @Get()
