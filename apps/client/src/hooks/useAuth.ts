@@ -1,43 +1,11 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 
 export const useAuth = () => {
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const login = (username: string, password: string) => {
-    setIsLoading(true);
-    setError('');
-
-    try {
-      console.log('Logging in with:', { username, password });
-      navigate('/');
-    } catch (err) {
-      setError('Invalid username or password');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const register = (username: string, password: string) => {
-    setIsLoading(true);
-    setError('');
-
-    try {
-      console.log('Registering user:', { username, password });
-      navigate('/');
-    } catch (err) {
-      setError('Registration failed. Username might be taken.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return {
-    login,
-    register,
-    isLoading,
-    error
-  };
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
 };

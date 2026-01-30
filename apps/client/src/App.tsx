@@ -16,6 +16,7 @@ import Player from './components/Player';
 
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { PlayerProvider } from './context/PlayerContext'; 
+import { AuthProvider } from './context/AuthContext';
 
 import { type Theme } from './types';
 
@@ -53,40 +54,42 @@ function App() {
   }, []);
 
   return (
-    <PlayerProvider>
-      <div className='min-h-screen bg-bg text-fg transition-colors duration-300 ease-in-out'>
-        {!isAuthPage && (
-          <>
-            <Header
-              onChangeTheme={handleThemeChange}
-              onToggleSidebar={handleToggleSidebar}
-            />
+    <AuthProvider>
+      <PlayerProvider>
+        <div className='min-h-screen bg-bg text-fg transition-colors duration-300 ease-in-out'>
+          {!isAuthPage && (
+            <>
+              <Header
+                onChangeTheme={handleThemeChange}
+                onToggleSidebar={handleToggleSidebar}
+              />
 
-            <Sidebar isOpen={isSidebarOpen} />
+              <Sidebar isOpen={isSidebarOpen} />
 
-            <Player/>
-          </>
-        )}
+              <Player/>
+            </>
+          )}
 
-        <main className={`pt-12 pb-24 transition-all duration-300 ease-in-out
-          ${!isAuthPage ? 'pt-12 pb-24' : ''} 
-          ${!isAuthPage && isSidebarOpen ? 'md:ml-55' : ''}`}>
-          <Routes>
-            <Route path="/" element={<Navigate to="/albums" replace />} />
-            <Route path="/login" element={<AuthPage mode="login" />} />
-            <Route path="/register" element={<AuthPage mode="register" />} />
-            <Route path="/account" element={<AccountPage />} />
-            <Route path="/albums" element={<AlbumsPage />} />
-            <Route path="/albums/:id" element={<AlbumDetailsPages />} />
-            <Route path="/artists" element={<ArtistsPage />} />
-            <Route path="/artists/:id" element={<ArtistDetailsPage />} />
-            <Route path="/songs" element={<TracksPage />} />
-            <Route path="/playlists" element={<PlaylistsPage />} />
-            <Route path="/playlists/:id" element={<AlbumDetailsPages type="playlist" />} />
-          </Routes>
-        </main>
-      </div>
-    </PlayerProvider>
+          <main className={`pt-12 pb-24 transition-all duration-300 ease-in-out
+            ${!isAuthPage ? 'pt-12 pb-24' : ''} 
+            ${!isAuthPage && isSidebarOpen ? 'md:ml-55' : ''}`}>
+            <Routes>
+              <Route path="/" element={<Navigate to="/albums" replace />} />
+              <Route path="/login" element={<AuthPage mode="login" />} />
+              <Route path="/register" element={<AuthPage mode="register" />} />
+              <Route path="/account" element={<AccountPage />} />
+              <Route path="/albums" element={<AlbumsPage />} />
+              <Route path="/albums/:id" element={<AlbumDetailsPages />} />
+              <Route path="/artists" element={<ArtistsPage />} />
+              <Route path="/artists/:id" element={<ArtistDetailsPage />} />
+              <Route path="/songs" element={<TracksPage />} />
+              <Route path="/playlists" element={<PlaylistsPage />} />
+              <Route path="/playlists/:id" element={<AlbumDetailsPages type="playlist" />} />
+            </Routes>
+          </main>
+        </div>
+      </PlayerProvider>
+    </AuthProvider>
   )
 }
 

@@ -56,3 +56,13 @@ export const formatTime = (timeInSeconds: number): string => {
 
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
+
+export interface User {
+  id: string;
+  name: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  user: User;
+}
