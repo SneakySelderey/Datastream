@@ -22,7 +22,7 @@ const AlbumGrid = ({ albums, onSelectAlbum }: AlbumGridProps) => {
           </div>
           <h3 className="mt-1 truncate">{album.title}</h3>
           <p className="text-sm text-fg">
-            {album.artist} &bull; {album.date}
+            {album.artists[0]?.name} &bull; {album.date}
           </p>
         </div>
       ))}

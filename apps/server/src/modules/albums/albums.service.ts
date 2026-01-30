@@ -17,10 +17,10 @@ export class AlbumsService {
     return albums.map((album) => ({
       id: album.id,
       title: album.title,
-      artist: album.artists.map(a => a.name).join(', ') || 'Unknown',
+      artists: album.artists,
       artistId: album.artists[0]?.id,
       date: album.date,
-      cover: album.coverPath 
+      cover: album.coverPath
         ? `http://localhost:3000/stream/cover/${album.coverPath}` 
         : null, 
       trackCount: album.tracks.length,
@@ -35,9 +35,17 @@ export class AlbumsService {
     
     if (!album) return null;
 
+    const genreMap = new Map();
+    album.tracks.forEach((track) => {
+      track.genres.forEach((genre) => {
+        genreMap.set(genre.id, { id: genre.id, name: genre.name });
+      });
+    });
+    const uniqueGenres = Array.from(genreMap.values());
+
     return {
         ...album,
-        artist: album.artists.map(a => a.name).join(', '),
+        artists: album.artists,
         cover: album.coverPath ? `http://localhost:3000/stream/cover/${album.coverPath}` : null,
         tracks: album.tracks.map(t => ({
             id: t.id,
@@ -47,12 +55,13 @@ export class AlbumsService {
             number: t.number,
             duration: t.duration,
             src: `http://localhost:3000/stream/track/${t.id}`, 
-            artist: t.artists.map(a => a.name).join(', '),
+            artists: t.artists,
             size: t.size,
             format: t.format,
-            genres: t.genres.map(g => g.name),
+            genres: t.genres,
             cover: t.coverPath ? `http://localhost:3000/stream/cover/${t.coverPath}` : null,
         })),
+        genres: uniqueGenres,
         trackCount: album.tracks.length,
         size: album.tracks.reduce((acc, t) => acc + t.size, 0).toString(),
         duration: album.tracks.reduce((acc, t) => acc + t.duration, 0).toString()

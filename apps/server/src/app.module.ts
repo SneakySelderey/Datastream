@@ -9,6 +9,7 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
+import { TracksModule } from './modules/tracks/tracks.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
     ScannerModule,
     AlbumsModule,
     PrismaModule,
-    AuthModule
+    AuthModule,
+    TracksModule
   ],
   controllers: [AppController, StreamController],
   providers: [

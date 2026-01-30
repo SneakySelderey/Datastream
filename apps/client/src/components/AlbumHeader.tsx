@@ -28,7 +28,7 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
             to={`/artists/${album.artistId}`} 
             className="hover:underline hover:text-primary transition-colors text-link"
           >
-            {album.artist}
+            {album.artists.map(artist => artist.name).join(', ')}
           </Link>
         </h2>
 
@@ -40,11 +40,11 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
           <div className='flex flex-wrap gap-2 mt-2 justify-center md:justify-start'>
             {album.genres.map((genre) => (
               <button
-                key={genre}
-                onClick={() => handleGenreClick(genre)}
+                key={genre.name}
+                onClick={() => handleGenreClick(genre.name)}
                 className='px-3 py-1 text-sm cursor-pointer rounded-full border border-fg/25 hover:bg-fg/10 hover:border-fg/40 transition-colors'
               >
-                {genre}
+                {genre.name}
               </button>
             ))}
           </div>

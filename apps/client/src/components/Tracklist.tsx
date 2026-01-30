@@ -26,8 +26,8 @@ const Tracklist: React.FC<TracklistProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const desktopGridClass = showAlbum
-    ? 'md:grid-cols-[auto_auto_auto_repeat(8,1fr)]'
-    : 'md:grid-cols-[auto_auto_auto_repeat(7,1fr)]';
+    ? 'md:grid-cols-[auto_auto_auto_auto_auto_repeat(6,1fr)]'
+    : 'md:grid-cols-[auto_auto_auto_auto_repeat(6,1fr)]';
 
   const isAllSelected = tracks.length > 0 && tracks.every(track => selectedIds.includes(track.id));
 
@@ -102,7 +102,7 @@ const Tracklist: React.FC<TracklistProps> = ({
           <p className="text-left">{t('artist')}</p>
 
           {showAlbum && (
-            <p className="hidden md:block">{t('album')}</p>
+            <p className="hidden text-left md:block">{t('album')}</p>
           )}
 
           <p>{t('duration')}</p>
@@ -136,24 +136,24 @@ const Tracklist: React.FC<TracklistProps> = ({
               </div>
 
               <p className="py-3">{index + 1}</p>
-              <p className="text-left truncate">{track.title}</p>
+              <p className="text-left text-wrap">{track.title}</p>
 
               <Link
-                to={`/artists/${track.artistId}`}
+                to={`/artists/${track.artists[0]?.id}`}
                 className="hover:underline relative text-link text-left"
                 onClick={(e) => e.stopPropagation()}
               >
-                {track.artist}
+                {track.artists[0]?.name}
               </Link>
 
               {showAlbum && (
-                <div className="hidden md:block text-link truncate">
+                <div className="hidden md:block text-link text-left">
                   <Link
                     to={`/albums/${track.albumId}`}
                     className="hover:underline relative"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {track.album}
+                    {track.album.title}
                   </Link>
                 </div>
               )}
@@ -162,7 +162,7 @@ const Tracklist: React.FC<TracklistProps> = ({
               <p className="hidden md:block">{track.plays}</p>
               <p className="hidden md:block">{track.format}</p>
               <p className="hidden md:block">{(track.size / 1048576).toFixed(2)} MB</p>
-              <p className="hidden md:block truncate">{Array.isArray(track.genres) ? track.genres.join(', ') : ''}</p>
+              <p className="hidden md:block text-wrap">{Array.isArray(track.genres) ? track.genres.map(g => g.name).join(', ') : ''}</p>
               <div className="hidden md:flex justify-center">...</div>
             </div>
           )

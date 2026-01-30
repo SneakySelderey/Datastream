@@ -2,29 +2,38 @@ export type Theme = 'light' | 'dark';
 
 export interface Track {
   id: string;
-  trackNumber: number;
+  number: number;
+  totalNumber: number;
+  discNumber: number;
   title: string;
-  artist: string;
+  artists: Artist[];
   artistId: string;
-  album: string;
+  album: Album;
   albumId: string;
-  src: string;
-  cover: string;
+  date: string;
+  filepath: string;
+  coverPath: string;
   duration: string;
   format: string;
   plays: number;
   size: number;
-  genres: string[];
+  bitrate: number;
+  genres: Genre[];
+}
+
+export interface Genre {
+  id: string;
+  name: string;
 }
 
 export interface Album {
   id: string;
   title: string;
-  artist: string;
+  artists: Artist[];
   artistId: string;
   cover: string;
   date: string;
-  genres: string[];
+  genres: Genre[];
   tracks: Track[];
   trackCount: number;
   duration: string;
@@ -42,10 +51,12 @@ export type SortMode = 'default' | 'random' | 'recently-added' | 'recently-playe
 export interface Artist {
   id: string;
   name: string;
-  albumCount: number;
-  songCount: number;
-  size: string;
-  plays: number;
+  albums: Album[];
+  tracks: Track[];
+  albumCount?: number;
+  songCount?: number;
+  size?: string;
+  plays?: number;
 }
 
 export const formatTime = (timeInSeconds: number): string => {

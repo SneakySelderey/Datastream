@@ -1,20 +1,14 @@
 import { useState, useEffect } from 'react';
 import { type Track, type FilterState, type SortMode } from '../types';
 
-const seedTracks: Track[] = [
-  { id: '1', trackNumber: 1, plays: 5, size: '15.75 MB', genres: ['classical', 'instrumental'], title: '01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27)', artist: '1000 Eyes', artistId: "1", album: "Schwanengesang", albumId: "2", src: '/music/01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27).flac', cover: '/covers/Schwanengesang.png', duration: '03:13', quality: 'FLAC' },
-  { id: '2', trackNumber: 2, plays: 2, size: '25.15 MB', genres: ['classical', 'instrumental'], title: '01 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27.slw)', artist: '1000 Eyes', artistId: "1", album: "Schwanengesang", albumId: "2", src: '/music/02 Schwanengesang, D. 957_ IV. Ständchen (v0.10.27.slw).flac', cover: '/covers/Schwanengesang.png', duration: '02:33', quality: 'FLAC' }
-];
-
-const allMockTracks: Track[] = [];
-for (let i = 0; i < 100; i++) {
-  const template = seedTracks[i % seedTracks.length];
-  allMockTracks.push({
-    ...template,
-    id: `${i + 1}`,
-    title: template.title
-  });
-}
+interface TracksResponse {
+  data: Track[];
+  total: number;
+  meta: {
+    genres: string[];
+    years: string[];
+  }
+} 
 
 export const useTracks = (page: number, limit: number, filters: FilterState, sortMode: SortMode = 'default') => {
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -22,30 +16,35 @@ export const useTracks = (page: number, limit: number, filters: FilterState, sor
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const availableGenres = ['Classical', 'Instrumental'];
-  const availableYears = ['2025'];
+  const [availableGenres, setAvailableGenres] = useState<string[]>([]);
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
 
   useEffect(() => {
-    const fetchTracks = () => {
+    const fetchTracks = async () => {
       setIsLoading(true);
+      setError(null);
+      
       try {
-        let result = [...allMockTracks];
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+          sort: sortMode,
+        });
 
-        if (sortMode === 'random') {
-          // rand
-        } else if (sortMode === 'recently-added') {
-          // recently added
-        }
-        // ...
+        if (filters.search) params.append('search', filters.search);
+        if (filters.genre) params.append('genre', filters.genre);
+        if (filters.year) params.append('year', filters.year);
 
-        const filteredTotal = result.length;
-
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const slicedTracks = result.slice(startIndex, endIndex);
+        const response = await fetch(`/api/tracks?${params.toString()}`);
         
-        setTracks(slicedTracks);
-        setTotal(filteredTotal);
+        if (!response.ok) throw new Error('Failed to fetch tracks');
+        
+        const json: TracksResponse = await response.json();
+        
+        setTracks(json.data);
+        setTotal(json.total);
+        setAvailableGenres(json.meta.genres);
+        setAvailableYears(json.meta.years);
 
       } catch (e) {
         setError('Cannot load tracks.');
