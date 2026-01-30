@@ -1,4 +1,4 @@
-import { createContext, useState, type ReactNode } from 'react';
+import { createContext, useState, useEffect, type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { type User } from '../types';
@@ -16,13 +16,43 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useLocalStorage<User | null>('app-user', null);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const [isLoading, setIsLoading] = useState<boolean>(!!user);
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  console.log('AuthProvider render, user:', user);
+  useEffect(() => {
+    const verifySession = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/me');
+
+        if (!response.ok) {
+          throw new Error('Session expired');
+        }
+
+        const data = await response.json();
+        setUser(data.user);
+        
+      } catch (err) {
+        console.log('Session mismatch: LocalStorage has user, but Cookie is invalid.');
+        setUser(null); 
+        if (location.pathname !== '/login' && location.pathname !== '/register') {
+           navigate('/login');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    verifySession();
+  }, []);
 
   const login = async (name: string, password: string) => {
     setIsLoading(true);
@@ -37,28 +67,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       const data = await response.json();
-      
-      console.log('Login response:', data);
-      console.log('Response OK:', response.ok);
 
       if (!response.ok) {
         throw new Error(data.message || 'Login failed');
       }
 
       const userData = data.user;
-      console.log('Setting user to:', userData);
-      
-      if (!userData) {
-        throw new Error('No user in response');
-      }
+      if (!userData) throw new Error('No user data received');
 
       setUser(userData);
       
-      setTimeout(() => {
-        const from = (location.state as any)?.from?.pathname || '/albums';
-        console.log('Navigating to:', from);
-        navigate(from, { replace: true });
-      }, 100);
+      const from = (location.state as any)?.from?.pathname || '/albums';
+      navigate(from, { replace: true });
       
     } catch (err: any) {
       console.error('Login error:', err);
@@ -81,22 +101,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       const data = await response.json();
-      console.log('Register response:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Registration failed');
       }
 
       const userData = data.user;
-      if (!userData) {
-        throw new Error('No user in response');
-      }
-
       setUser(userData);
       
-      setTimeout(() => {
-        navigate('/albums', { replace: true });
-      }, 100);
+      navigate('/albums', { replace: true });
       
     } catch (err: any) {
       console.error('Register error:', err);
@@ -107,6 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
+    setIsLoading(true);
     try {
       await fetch('/api/auth/logout', { 
         method: 'POST',
@@ -116,6 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Logout failed', e);
     } finally {
       setUser(null);
+      setIsLoading(false);
       navigate('/login', { replace: true });
     }
   };
