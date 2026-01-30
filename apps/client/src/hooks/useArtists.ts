@@ -1,22 +1,9 @@
 import { useState, useEffect } from 'react';
 import { type Artist, type SortMode } from '../types';
 
-const seedArtists: Artist[] = [
-  { id: '1', name: '1000 Eyes', albumCount: 5, songCount: 42, size: '1.2 GB', plays: 15400 },
-  { id: '2', name: 'Stellar', albumCount: 2, songCount: 15, size: '450 MB', plays: 3200 },
-  { id: '3', name: 'Echo', albumCount: 8, songCount: 90, size: '2.5 GB', plays: 50000 },
-  { id: '4', name: 'Vertex', albumCount: 1, songCount: 8, size: '200 MB', plays: 120 },
-];
-
-const allMockArtists: Artist[] = [];
-for (let i = 0; i < 50; i++) {
-  const template = seedArtists[i % seedArtists.length];
-  allMockArtists.push({
-    ...template,
-    id: template.id,
-    name: template.name,
-    plays: template.plays
-  });
+interface ApiArtistResponse {
+  data: Artist[];
+  total: number;
 }
 
 export const useArtists = (
@@ -31,32 +18,31 @@ export const useArtists = (
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchArtists = () => {
+    const fetchArtists = async () => {
       setIsLoading(true);
+      setError(null);
+
       try {
-        let result = [...allMockArtists];
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+          sort: sortMode,
+        });
 
-        if (sortMode === 'random') {
-          // ...
-        } else if (sortMode === 'most-played') {
-          // ...
-        } else if (sortMode === 'recently-added') {
-            // ...
-        } else {
-            // ...
-        }
-        result.sort((a, b) => a.name.localeCompare(b.name));
+        if (search) params.append('search', search);
 
-        const filteredTotal = result.length;
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
+        const response = await fetch(`/api/artists?${params.toString()}`);
         
-        setArtists(result.slice(startIndex, endIndex));
-        setTotal(filteredTotal);
+        if (!response.ok) throw new Error('Failed to fetch artists');
 
-      } catch (e) {
-        setError('Cannot load artists.');
+        const json: ApiArtistResponse = await response.json();
+
+        setArtists(json.data);
+        setTotal(json.total);
+
+      } catch (e: any) {
         console.error(e);
+        setError(e.message);
       } finally {
         setIsLoading(false);
       }

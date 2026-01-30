@@ -20,7 +20,7 @@ model Album {
   id        String   @id @default(uuid())
   title     String
   
-  artists    Artist[]
+  artists   Artist[]
   
   tracks    Track[]
   

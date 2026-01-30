@@ -37,7 +37,7 @@ export interface Album {
   tracks: Track[];
   trackCount: number;
   duration: string;
-  size: string;
+  size: number;
 }
 
 export interface FilterState {
@@ -53,10 +53,10 @@ export interface Artist {
   name: string;
   albums: Album[];
   tracks: Track[];
-  albumCount?: number;
-  songCount?: number;
-  size?: string;
-  plays?: number;
+  albumCount: number;
+  songCount: number;
+  size: number;
+  plays: number;
 }
 
 export const formatTime = (timeInSeconds: number): string => {
