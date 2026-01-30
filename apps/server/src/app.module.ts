@@ -7,6 +7,8 @@ import { StreamController } from './modules/stream/stream.controller';
 import { AlbumsModule } from './modules/albums/albums.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -20,6 +22,12 @@ import { AuthModule } from './modules/auth/auth.module';
     AuthModule
   ],
   controllers: [AppController, StreamController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

@@ -5,10 +5,9 @@ import { type User, type AuthResponse } from '../types';
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   login: (name: string, password: string) => Promise<void>;
   register: (name: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>; // Logout is async now (calls backend)
   isLoading: boolean;
   error: string | null;
 }
@@ -17,8 +16,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useLocalStorage<User | null>('app-user', null);
-  const [token, setToken] = useLocalStorage<string | null>('app-token', null);
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,10 +24,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
-    if (token && (location.pathname === '/login' || location.pathname === '/register')) {
+    if (user && (location.pathname === '/login' || location.pathname === '/register')) {
       navigate('/');
     }
-  }, [token, location, navigate]);
+  }, [user, location, navigate]);
 
   const login = async (name: string, password: string) => {
     setIsLoading(true);
@@ -48,8 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(data.message || 'Login failed');
       }
 
-      const { access_token, user } = data as AuthResponse;
-      setToken(access_token);
+      const { user } = data as AuthResponse;
       setUser(user);
       
       navigate('/');
@@ -77,8 +74,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      await login(name, password);
+      const { user } = data as AuthResponse;
+      setUser(user);
       
+      navigate('/');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -86,14 +85,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    navigate('/login');
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Logout failed', e);
+    } finally {
+      setUser(null);
+      navigate('/login');
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading, error }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isLoading, error }}>
       {children}
     </AuthContext.Provider>
   );
