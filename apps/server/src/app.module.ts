@@ -11,6 +11,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { TracksModule } from './modules/tracks/tracks.module';
 import { ArtistsModule } from './modules/artists/artists.module';
+import { PlaylistsModule } from './modules/playlists/playlists.module';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { ArtistsModule } from './modules/artists/artists.module';
     PrismaModule,
     AuthModule,
     TracksModule,
-    ArtistsModule
+    ArtistsModule,
+    PlaylistsModule
   ],
   controllers: [AppController, StreamController],
   providers: [

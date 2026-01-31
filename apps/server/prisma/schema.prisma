@@ -61,6 +61,8 @@ model Track {
   album       Album?   @relation(fields: [albumId], references: [id])
 
   coverPath   String?
+
+  playlists  Playlist[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -72,6 +74,21 @@ model User {
   name        String    @unique
   password    String
 
+  playlists   Playlist[]
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+model Playlist {
+  id        String   @id @default(uuid())
+  title     String
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  tracks    Track[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
