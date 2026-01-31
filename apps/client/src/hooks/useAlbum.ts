@@ -13,7 +13,11 @@ export const useAlbum = (id: string, type: 'album' | 'playlist' = 'album') => {
       setError(null);
 
       try {
-        const response = await fetch(`/api/${type}s/${id}`);
+        const endpoint = type === 'playlist' 
+          ? `/api/playlists/${id}` 
+          : `/api/albums/${id}`;
+
+        const response = await fetch(endpoint);
         
         if (!response.ok) {
            throw new Error('Album not found');

@@ -54,10 +54,8 @@ const Tracklist: React.FC<TracklistProps> = ({
     }
   };
 
-  const handleConfirmAddToPlaylist = (playlistId: string) => {
-    console.log(`Adding tracks [${selectedIds.join(', ')}] to playlist ID: ${playlistId}`);
-
-    setIsModalOpen(false);
+   const handleSuccess = () => {
+    alert(t('tracksAddedToPlaylist'));
     if (onSelectionChange) onSelectionChange([]);
   };
 
@@ -172,8 +170,8 @@ const Tracklist: React.FC<TracklistProps> = ({
       {isModalOpen && (
         <TracklistModal
           onClose={() => setIsModalOpen(false)}
-          onConfirm={handleConfirmAddToPlaylist}
-          trackCount={selectedIds.length}
+          onSuccess={handleSuccess}
+          trackIds={selectedIds}
         />
       )}
     </div>

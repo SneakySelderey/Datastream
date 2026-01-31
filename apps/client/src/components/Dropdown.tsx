@@ -36,16 +36,6 @@ const Dropdown: React.FC<DropdownProps> = ({
 
       {isOpen && (
         <div className='absolute w-full mt-2 bg-bg border border-fg/10 rounded-lg shadow-md z-20'>
-
-          {placeholder && (
-            <button
-              onClick={() => handleOptionClick('')}
-              className='w-full text-left px-4 py-2 flex gap-2 hover:bg-fg/5 transition-colors'
-            >
-              <span>{placeholder}</span>
-            </button>
-          )}
-
           {options.map((opt) => (
             <button
               key={opt}

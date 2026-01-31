@@ -1,50 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { type Album } from '../types';
 
-const seedPlaylists: Album[] = [
-  { id: '1', title: 'Chill Vibes', artist: 'User', artistId: '11', date: '2025-11-25', cover: '/covers/chill-vibes.jpg', genres: [], tracklist: [], trackCount: 0, duration: '0', size: '0' },
-  { id: '2', title: 'Workout', artist: 'User', artistId: '11', date: '2025-11-25', cover: '/covers/workout.jpg', genres: [], tracklist: [], trackCount: 0, duration: '0', size: '0' },
-  { id: '3', title: 'Road Trip', artist: 'User', artistId: '11', date: '2025-11-25', cover: '/covers/road-trip.jpg', genres: [], tracklist: [], trackCount: 0, duration: '0', size: '0' },
-];
-
-const allMockPlaylists: Album[] = [];
-for (let i = 0; i < 20; i++) {
-  const template = seedPlaylists[i % seedPlaylists.length];
-  allMockPlaylists.push({ ...template, id: `${i+1}`, title: `${template.title} #${i+1}` });
-}
-
-export const usePlaylists = (
-  page: number, 
-  limit: number, 
-  search: string
-) => {
+export const usePlaylists = (page: number, limit: number, search: string) => {
   const [playlists, setPlaylists] = useState<Album[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPlaylists = () => {
-      setIsLoading(true);
-      try {
-        let result = [...allMockPlaylists];
+  const fetchPlaylists = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-        const filteredTotal = result.length;
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        
-        setPlaylists(result.slice(startIndex, endIndex));
-        setTotal(filteredTotal);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
 
-      } catch (e) {
-        setError('Cannot load playlists.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPlaylists();
+      const response = await fetch(`/api/playlists?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch playlists');
+      
+      const data = await response.json();
+      setPlaylists(data);
+      setTotal(data.length);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setIsLoading(false);
+    }
   }, [page, limit, search]);
 
-  return { playlists, total, isLoading, error };
+  useEffect(() => {
+    fetchPlaylists();
+  }, [fetchPlaylists]);
+
+  const createPlaylist = async (title: string): Promise<string> => {
+    try {
+      const response = await fetch('/api/playlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, trackIds: [] }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to create playlist');
+      
+      const newPlaylist = await response.json();
+      
+      fetchPlaylists();
+      
+      return newPlaylist.id;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  };
+
+  return { playlists, total, isLoading, error, createPlaylist, refresh: fetchPlaylists };
 };
