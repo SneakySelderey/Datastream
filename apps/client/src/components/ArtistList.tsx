@@ -1,11 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { type Artist } from '../types';
+import { type ArtistListItem } from '../types';
 
 interface ArtistListProps {
-  artists: Artist[];
-  onSelectArtist: (artist: Artist) => void;
+  artists: ArtistListItem[];
+  onSelectArtist: (artist: ArtistListItem) => void;
 }
 
 const ArtistList: React.FC<ArtistListProps> = ({ artists, onSelectArtist }) => {

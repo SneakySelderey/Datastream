@@ -45,7 +45,7 @@ const PlayQueue: React.FC<PlayQueueProps> = ({ queue, currentTrack, onPlayTrack,
 
                 <div className="flex flex-col overflow-hidden">
                   <span className="truncate">{qTrack.title}</span>
-                  <span className="truncate text-xs">{qTrack.artists[0].name}</span>
+                  <span className="truncate text-xs">{qTrack.artists?.[0]?.name ?? '—'}</span>
                 </div>
               </li>
             );

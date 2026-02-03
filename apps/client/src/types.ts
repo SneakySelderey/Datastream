@@ -2,59 +2,82 @@ export type Theme = 'light' | 'dark';
 
 export interface Track {
   id: string;
-  number: number;
-  totalNumber: number;
-  discNumber: number;
   title: string;
-  artists: Artist[];
-  artistId: string;
-  album: Album;
-  albumId: string;
-  date: string;
-  filepath: string;
-  coverPath: string;
-  duration: string;
-  format: string;
-  plays: number;
-  size: number;
+  number?: number | null;
+  totalNumber?: number | null;
+  discNumber: number;
+  date?: string | null;
+  duration: number;
   bitrate: number;
-  genres: Genre[];
+  size: number;
+  filePath: string;
+  fileName: string;
+  format: string;
+  albumId?: string | null;
+  album?: Album | null;
+  coverPath?: string | null;
+  artists?: Artist[];
+  genres?: Genre[];
+  playlists?: Playlist[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Genre {
   id: string;
   name: string;
+  tracks?: Track[];
 }
 
 export interface Album {
   id: string;
   title: string;
-  artists: Artist[];
-  artistId: string;
-  cover: string;
-  date: string;
-  genres: Genre[];
-  tracks: Track[];
-  trackCount: number;
-  duration: string;
-  size: number;
+  date?: string | null;
+  coverPath?: string | null;
+  createdAt: string;
+  artists?: Artist[];
+  tracks?: Track[];
 }
 
 export interface Playlist {
   id: string;
   title: string;
   userId: string;
-  tracks: Track[];
+  user?: User;
+  tracks?: Track[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface PlaylistSummary {
+export interface Artist {
   id: string;
-  title: string;
-  trackCount: number;
+  name: string;
+  createdAt: string;
+  albums?: Album[];
+  tracks?: Track[];
+}
+
+export interface User {
+  id: string;
+  name: string;
+  createdAt: string;
   updatedAt: string;
-  coverUrl?: string | null;
+}
+
+export interface ArtistListItem {
+  id: string;
+  name: string;
+  albumCount: number;
+  songCount: number;
+  size: number;
+  plays: number;
+}
+
+export interface PlaylistListItem extends Playlist {
+  _count: {
+    tracks: number;
+  };
+  tracks: Track[];
 }
 
 export interface FilterState {
@@ -65,17 +88,6 @@ export interface FilterState {
 
 export type SortMode = 'default' | 'random' | 'recently-added' | 'recently-played' | 'most-played';
 
-export interface Artist {
-  id: string;
-  name: string;
-  albums: Album[];
-  tracks: Track[];
-  albumCount: number;
-  songCount: number;
-  size: number;
-  plays: number;
-}
-
 export const formatTime = (timeInSeconds: number): string => {
   if (!timeInSeconds || isNaN(timeInSeconds)) return '00:00';
 
@@ -85,10 +97,12 @@ export const formatTime = (timeInSeconds: number): string => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
-export interface User {
-  id: string;
-  name: string;
-}
+export const buildCoverUrl = (coverPath?: string | null): string | null => {
+  if (!coverPath) return null;
+  return `/stream/cover/${coverPath}`;
+};
+
+export const buildTrackUrl = (trackId: string): string => `/stream/track/${trackId}`;
 
 export interface AuthResponse {
   access_token: string;

@@ -8,7 +8,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import ArtistList from '../components/ArtistList';
 import PaginationControls from '../components/PaginationControls';
 
-import { type Artist, type SortMode } from '../types';
+import { type ArtistListItem, type SortMode } from '../types';
 
 const ArtistsPage = () => {
   const { t } = useTranslation();
@@ -43,7 +43,7 @@ const ArtistsPage = () => {
     setCurrentPage(1);
   };
 
-  const handleSelectArtist = (artist: Artist) => {
+  const handleSelectArtist = (artist: ArtistListItem) => {
     navigate(`/artists/${artist.id}`);
   };
 

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 
-import { type Album } from '../types';
+import { type Album, type Playlist } from '../types';
 
 export const useAlbum = (id: string, type: 'album' | 'playlist' = 'album') => {
-  const [album, setAlbum] = useState<Album>();
+  const [album, setAlbum] = useState<Album | Playlist>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 

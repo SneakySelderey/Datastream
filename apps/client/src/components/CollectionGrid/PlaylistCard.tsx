@@ -1,8 +1,8 @@
-import { type PlaylistSummary } from '../../types';
+import { type PlaylistListItem, buildCoverUrl } from '../../types';
 
 interface PlaylistCardProps {
-  playlist: PlaylistSummary;
-  onSelect: (playlist: PlaylistSummary) => void;
+  playlist: PlaylistListItem;
+  onSelect: (playlist: PlaylistListItem) => void;
 }
 
 const formatDate = (isoDate: string) => {
@@ -16,15 +16,17 @@ const formatDate = (isoDate: string) => {
 };
 
 const PlaylistCard = ({ playlist, onSelect }: PlaylistCardProps) => {
+  const coverUrl = buildCoverUrl(playlist.tracks?.[0]?.album?.coverPath);
+
   return (
     <div
       className="p-2 hover:bg-hv transition-colors duration-300 cursor-pointer"
       onClick={() => onSelect(playlist)}
     >
       <div className="aspect-square bg-hv/50 flex items-center justify-center">
-        {playlist.coverUrl ? (
+        {coverUrl ? (
           <img
-            src={playlist.coverUrl}
+            src={coverUrl}
             alt={`${playlist.title} playlist cover`}
           />
         ) : (
@@ -33,7 +35,7 @@ const PlaylistCard = ({ playlist, onSelect }: PlaylistCardProps) => {
       </div>
       <h3 className="mt-1 truncate">{playlist.title}</h3>
       <p className="text-sm text-fg">
-        {playlist.trackCount} tracks &bull; {formatDate(playlist.updatedAt)}
+        {playlist._count.tracks} tracks &bull; {formatDate(playlist.updatedAt)}
       </p>
     </div>
   );

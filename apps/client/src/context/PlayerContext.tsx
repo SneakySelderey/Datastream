@@ -3,9 +3,22 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { type Track } from '../types';
 
 const defaultTrack: Track = { 
-  id: '0', artistId: '0', albumId: '0', trackNumber: 0, plays: 0, size: 0, genres: [], 
-  title: 'Select a track to play', artist: '...', album: '...',
-  src: '', cover: '', duration: '00:00', format: 'FLAC' 
+  id: '0',
+  title: 'Select a track to play',
+  discNumber: 1,
+  duration: 0,
+  bitrate: 0,
+  size: 0,
+  filePath: '',
+  fileName: '',
+  format: '',
+  createdAt: new Date(0).toISOString(),
+  updatedAt: new Date(0).toISOString(),
+  artists: [{
+    id: '0',
+    name: '...',
+    createdAt: new Date(0).toISOString(),
+  }],
 };
 
 interface PlayerContextType {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { type Album, formatTime } from '../types';
+import { type Album, formatTime, buildCoverUrl } from '../types';
 
 interface AlbumHeaderProps {
   album: Album;
@@ -8,6 +8,19 @@ interface AlbumHeaderProps {
 
 const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
   const navigate = useNavigate();
+  const coverUrl = buildCoverUrl(album.coverPath);
+
+  const trackCount = album.tracks?.length ?? 0;
+  const totalDuration = (album.tracks ?? []).reduce((acc, track) => acc + track.duration, 0);
+  const totalSize = (album.tracks ?? []).reduce((acc, track) => acc + track.size, 0);
+
+  const genreMap = new Map<string, { id: string; name: string }>();
+  (album.tracks ?? []).forEach((track) => {
+    (track.genres ?? []).forEach((genre) => {
+      genreMap.set(genre.id, { id: genre.id, name: genre.name });
+    });
+  });
+  const uniqueGenres = Array.from(genreMap.values());
 
   const handleGenreClick = (genre: string) => {
     navigate(`/albums/all?genre=${encodeURIComponent(genre)}`);
@@ -16,7 +29,7 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
   return (
     <div className='flex flex-col md:flex-row items-center md:items-start gap-4'>
       <img 
-        src={album.cover} 
+        src={coverUrl ?? ''} 
         alt={`Cover for ${album.title}`}
         className='w-50 h-50 md:w-64 md:h-64 object-cover rounded-lg' 
       />
@@ -25,20 +38,20 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
 
         <h2>
           <Link 
-            to={`/artists/${album.artistId}`} 
+            to={album.artists?.[0]?.id ? `/artists/${album.artists[0].id}` : '#'} 
             className="hover:underline hover:text-primary transition-colors text-link"
           >
-            {album.artists.map(artist => artist.name).join(', ')}
+            {(album.artists ?? []).map(artist => artist.name).join(', ') || '—'}
           </Link>
         </h2>
 
         <p>
-          {album.date} &bull; {album.trackCount} Songs &bull; {formatTime(Number(album.duration))} &bull; {(Number(album.size) / 1048576).toFixed(2)} MB
+          {album.date ?? '—'} &bull; {trackCount} Songs &bull; {formatTime(totalDuration)} &bull; {(totalSize / 1048576).toFixed(2)} MB
         </p>
 
-        {album.genres && album.genres.length > 0 && (
+        {uniqueGenres.length > 0 && (
           <div className='flex flex-wrap gap-2 mt-2 justify-center md:justify-start'>
-            {album.genres.map((genre) => (
+            {uniqueGenres.map((genre) => (
               <button
                 key={genre.name}
                 onClick={() => handleGenreClick(genre.name)}

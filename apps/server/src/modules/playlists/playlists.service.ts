@@ -33,32 +33,18 @@ export class PlaylistsService {
       where.title = { contains: search };
     }
 
-    const playlists = await this.prisma.playlist.findMany({
+    return this.prisma.playlist.findMany({
       where,
       include: {
         _count: { select: { tracks: true } },
-        tracks: { 
-          take: 1, 
+        tracks: {
+          take: 1,
           include: { album: true },
-          orderBy: { createdAt: 'desc' }
-        } 
+          orderBy: { createdAt: 'desc' },
+        },
       },
-      orderBy: { title: 'asc' }
+      orderBy: { title: 'asc' },
     });
-
-    return playlists.map(p => ({
-      id: p.id,
-      title: p.title,
-      artists: [{ id: 'va', name: 'Various Artists' }],
-      artistId: 'va',
-      date: p.createdAt.toISOString(),
-      trackCount: p._count.tracks,
-      cover: p.tracks[0]?.album?.coverPath 
-        ? `http://localhost:3000/stream/cover/${p.tracks[0].album.coverPath}` 
-        : null,
-      size: '0',
-      duration: '0'
-    }));
   }
 
   async findOne(id: string, userId: string) {
@@ -69,10 +55,10 @@ export class PlaylistsService {
           include: {
             album: true,
             artists: true,
-            genres: true
+            genres: true,
           },
-        }
-      }
+        },
+      },
     });
 
     if (!playlist) throw new NotFoundException('Playlist not found');
@@ -81,44 +67,7 @@ export class PlaylistsService {
       throw new ForbiddenException('You do not have access to this playlist');
     }
 
-    const totalDuration = playlist.tracks.reduce((acc, t) => acc + t.duration, 0);
-    const totalSize = playlist.tracks.reduce((acc, t) => acc + t.size, 0);
-
-    return {
-      id: playlist.id,
-      title: playlist.title,
-      artists: [{ id: 'va', name: 'Various Artists' }],
-      artistId: 'va',
-      date: playlist.createdAt.toISOString(),
-      
-      cover: playlist.tracks[0]?.album?.coverPath 
-        ? `http://localhost:3000/stream/cover/${playlist.tracks[0].album.coverPath}` 
-        : null,
-      
-      genres: [],
-      
-      tracks: playlist.tracks.map(t => ({
-        id: t.id,
-        title: t.title,
-        
-        album: t.album, 
-        albumId: t.albumId,
-        artists: t.artists, 
-        artistId: t.artists[0]?.id,
-        
-        number: t.number,
-        duration: t.duration,
-        src: `http://localhost:3000/stream/track/${t.id}`,
-        size: t.size,
-        format: t.format,
-        genres: t.genres,
-        coverPath: t.coverPath ? `http://localhost:3000/stream/cover/${t.coverPath}` : null
-      })),
-      
-      trackCount: playlist.tracks.length,
-      duration: totalDuration, 
-      size: totalSize
-    };
+    return playlist;
   }
 
   async update(id: string, updatePlaylistDto: UpdatePlaylistDto) {

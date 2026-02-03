@@ -9,7 +9,7 @@ import CollectionGrid from '../components/CollectionGrid/CollectionGrid';
 import PlaylistCard from '../components/CollectionGrid/PlaylistCard';
 import PaginationControls from '../components/PaginationControls';
 
-import { type PlaylistSummary } from '../types';
+import { type PlaylistListItem } from '../types';
 
 const PlaylistsPage = () => {
   const { t } = useTranslation();
@@ -41,7 +41,7 @@ const PlaylistsPage = () => {
     setCurrentPage(1);
   };
 
-  const handleSelectPlaylist = (playlist: PlaylistSummary) => {
+  const handleSelectPlaylist = (playlist: PlaylistListItem) => {
     navigate(`/playlists/${playlist.id}`);
   };
 

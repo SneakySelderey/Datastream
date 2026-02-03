@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { type Artist, type SortMode } from '../types';
+import { type ArtistListItem, type SortMode } from '../types';
 
 interface ApiArtistResponse {
-  data: Artist[];
+  data: ArtistListItem[];
   total: number;
 }
 
@@ -12,7 +12,7 @@ export const useArtists = (
   search: string, 
   sortMode: SortMode = 'default'
 ) => {
-  const [artists, setArtists] = useState<Artist[]>([]);
+  const [artists, setArtists] = useState<ArtistListItem[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

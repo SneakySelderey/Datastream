@@ -12,7 +12,7 @@ import SkipForwardIcon from '../../assets/skip-forward.svg?react';
 import PlaylistsIcon from '../../assets/playlists.svg?react';
 
 import PlayQueue from './PlayQueue';
-import { formatTime } from '../../types';
+import { buildCoverUrl, buildTrackUrl, formatTime } from '../../types';
 
 const Player: React.FC = () => {
   const { currentTrack, isPlaying, queue, togglePlay, setTrack } = usePlayer();
@@ -88,6 +88,10 @@ const Player: React.FC = () => {
     
   if (!currentTrack) return null;
 
+  const artistName = currentTrack.artists?.[0]?.name ?? '—';
+  const albumTitle = currentTrack.album?.title ?? '—';
+  const coverUrl = buildCoverUrl(currentTrack.coverPath ?? currentTrack.album?.coverPath);
+
   return (
     <div className="fixed bottom-0 left-0 right-0 p-3 bg-accent text-fg z-50 transition-colors duration-300 ease-in-out">
       {isQueueOpen && (
@@ -101,7 +105,7 @@ const Player: React.FC = () => {
 
       <audio
         ref={audioRef}
-        src={currentTrack?.src}
+        src={buildTrackUrl(currentTrack.id)}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={() => {
@@ -111,26 +115,34 @@ const Player: React.FC = () => {
       />
 
       <div className="flex items-center gap-5">
-        <img src={currentTrack.cover} alt={currentTrack.title} className="w-16 h-16 rounded hidden md:block" />
+        <img src={coverUrl ?? ''} alt={currentTrack.title} className="w-16 h-16 rounded hidden md:block" />
 
         <div className='flex-col w-full truncate'>
           <div>
             <p className="font-bold">{currentTrack.title}</p>
 
             <div className="truncate">
-              <Link
-                to={`/artists/${currentTrack.artistId}`}
-                className="text-link hover:underline hover:text-primary transition-colors"
-              >
-                {currentTrack.artist}
-              </Link>
+              {currentTrack.artists?.[0]?.id ? (
+                <Link
+                  to={`/artists/${currentTrack.artists[0].id}`}
+                  className="text-link hover:underline hover:text-primary transition-colors"
+                >
+                  {artistName}
+                </Link>
+              ) : (
+                <span className="text-fg/70">{artistName}</span>
+              )}
               <span className="mx-1">&bull;</span>
-              <Link 
-                to={`/albums/${currentTrack.albumId}`}
-                className="text-link hover:underline hover:text-primary transition-colors"
-              >
-                {currentTrack.album}
-              </Link>
+              {currentTrack.albumId ? (
+                <Link 
+                  to={`/albums/${currentTrack.albumId}`}
+                  className="text-link hover:underline hover:text-primary transition-colors"
+                >
+                  {albumTitle}
+                </Link>
+              ) : (
+                <span className="text-fg/70">{albumTitle}</span>
+              )}
             </div>
           </div>
 

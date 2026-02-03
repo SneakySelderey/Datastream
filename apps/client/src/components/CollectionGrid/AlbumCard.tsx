@@ -1,4 +1,4 @@
-import { type Album } from '../../types';
+import { type Album, buildCoverUrl } from '../../types';
 
 interface AlbumCardProps {
   album: Album;
@@ -6,6 +6,8 @@ interface AlbumCardProps {
 }
 
 const AlbumCard = ({ album, onSelect }: AlbumCardProps) => {
+  const coverUrl = buildCoverUrl(album.coverPath);
+
   return (
     <div
       className="p-2 hover:bg-hv transition-colors duration-300 cursor-pointer"
@@ -13,13 +15,13 @@ const AlbumCard = ({ album, onSelect }: AlbumCardProps) => {
     >
       <div>
         <img
-          src={album.cover}
+          src={coverUrl ?? ''}
           alt={`${album.title} album cover`}
         />
       </div>
       <h3 className="mt-1 truncate">{album.title}</h3>
       <p className="text-sm text-fg">
-        {album.artists[0]?.name} &bull; {album.date}
+        {album.artists?.[0]?.name ?? '—'} &bull; {album.date ?? '—'}
       </p>
     </div>
   );
