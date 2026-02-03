@@ -1,18 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-import { usePlayer } from '../context/PlayerContext';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { usePlayer } from '../../context/PlayerContext';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
 
-import PlayIcon from '../assets/play.svg?react';
-import PauseIcon from '../assets/pause.svg?react';
-import VolumeIcon from '../assets/volume-full.svg?react';
-import SkipBackwardIcon from '../assets/skip-backward.svg?react';
-import SkipForwardIcon from '../assets/skip-forward.svg?react';
-import PlaylistsIcon from '../assets/playlists.svg?react';
+import PlayIcon from '../../assets/play.svg?react';
+import PauseIcon from '../../assets/pause.svg?react';
+import VolumeIcon from '../../assets/volume-full.svg?react';
+import SkipBackwardIcon from '../../assets/skip-backward.svg?react';
+import SkipForwardIcon from '../../assets/skip-forward.svg?react';
+import PlaylistsIcon from '../../assets/playlists.svg?react';
 
 import PlayQueue from './PlayQueue';
-import { formatTime } from '../types';
+import { formatTime } from '../../types';
 
 const Player: React.FC = () => {
   const { currentTrack, isPlaying, queue, togglePlay, setTrack } = usePlayer();

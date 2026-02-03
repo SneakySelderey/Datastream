@@ -6,7 +6,7 @@ import { useAlbum } from '../hooks/useAlbum';
 import { usePlayer } from '../context/PlayerContext';
 
 import AlbumHeader from '../components/AlbumHeader';
-import Tracklist from '../components/Tracklist';
+import Tracklist from '../components/Tracklist/Tracklist';
 
 import PlayIcon from '../assets/play.svg?react';
 import ShuffleIcon from '../assets/random-albums.svg?react';

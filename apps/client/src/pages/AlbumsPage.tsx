@@ -5,8 +5,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAlbums } from '../hooks/useAlbums';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-import CollectionGrid from '../components/CollectionGrid';
-import AlbumCard from '../components/AlbumCard';
+import CollectionGrid from '../components/CollectionGrid/CollectionGrid';
+import AlbumCard from '../components/CollectionGrid/AlbumCard';
 import PaginationControls from '../components/PaginationControls';
 import Filters from '../components/Filters';
 

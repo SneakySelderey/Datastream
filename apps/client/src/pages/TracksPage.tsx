@@ -6,7 +6,7 @@ import { useTracks } from '../hooks/useTracks';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { usePlayer } from '../context/PlayerContext';
 
-import Tracklist from '../components/Tracklist';
+import Tracklist from '../components/Tracklist/Tracklist';
 import PaginationControls from '../components/PaginationControls';
 import Filters from '../components/Filters';
 

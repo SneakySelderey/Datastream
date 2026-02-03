@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import Dropdown from './Dropdown';
 
-import { type SortMode } from '../types';
+import { type SortMode } from '../../types';
 
 interface FiltersProps {
   search: string;

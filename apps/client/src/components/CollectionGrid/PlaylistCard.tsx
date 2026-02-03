@@ -1,4 +1,4 @@
-import { type PlaylistSummary } from '../types';
+import { type PlaylistSummary } from '../../types';
 
 interface PlaylistCardProps {
   playlist: PlaylistSummary;

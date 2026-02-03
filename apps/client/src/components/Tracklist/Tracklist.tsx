@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { TracklistModal } from './TracklistModal';
 
-import { type Track, formatTime } from '../types';
+import { type Track, formatTime } from '../../types';
 
 interface TracklistProps {
   tracks: Track[];

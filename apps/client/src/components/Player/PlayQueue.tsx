@@ -1,9 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { type Track } from '../types';
+import { type Track } from '../../types';
 
-import CloseIcon from '../assets/close.svg?react';
+import CloseIcon from '../../assets/close.svg?react';
 
 interface PlayQueueProps {
   queue: Track[];
@@ -45,7 +45,7 @@ const PlayQueue: React.FC<PlayQueueProps> = ({ queue, currentTrack, onPlayTrack,
 
                 <div className="flex flex-col overflow-hidden">
                   <span className="truncate">{qTrack.title}</span>
-                  <span className="truncate text-xs">{qTrack.artist}</span>
+                  <span className="truncate text-xs">{qTrack.artists[0].name}</span>
                 </div>
               </li>
             );

@@ -5,8 +5,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePlaylists } from '../hooks/usePlaylists';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-import CollectionGrid from '../components/CollectionGrid';
-import PlaylistCard from '../components/PlaylistCard';
+import CollectionGrid from '../components/CollectionGrid/CollectionGrid';
+import PlaylistCard from '../components/CollectionGrid/PlaylistCard';
 import PaginationControls from '../components/PaginationControls';
 
 import { type PlaylistSummary } from '../types';

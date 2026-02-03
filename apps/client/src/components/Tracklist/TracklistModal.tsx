@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePlaylists } from '../hooks/usePlaylists';
-import { usePlaylistActions } from '../hooks/usePlaylistActions';
-import Dropdown from './Dropdown';
+import { usePlaylists } from '../../hooks/usePlaylists';
+import { usePlaylistActions } from '../../hooks/usePlaylistActions';
+import Dropdown from '../CollectionGrid/Dropdown';
 
 interface TracklistModalProps {
   onClose: () => void;
