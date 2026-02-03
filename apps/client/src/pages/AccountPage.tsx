@@ -14,7 +14,7 @@ const languages = [
 const AccountPage: React.FC = () => {
   const { i18n, t } = useTranslation();
   const [savedLang, setSavedLang] = useLocalStorage<string>('app-lang', 'en');
-  const { logout, user } = useAuth();
+  const { logout, user, updateUser } = useAuth();
 
   useEffect(() => {
     if (savedLang && i18n.language !== savedLang) {
@@ -37,6 +37,54 @@ const AccountPage: React.FC = () => {
 
   const [newNickname, setNewNickname] = useState('');
   const [newPassword, setNewPassword] = useState('');
+
+  const handleNicknameSave = async () => {
+    if (!user || !newNickname.trim()) return;
+
+    try {
+      const response = await fetch('/api/auth/change-nickname', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: user.id, newName: newNickname.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update nickname');
+      }
+
+      updateUser(data.user);
+
+      setNewNickname('');
+    } catch (err) {
+      console.error('Nickname update failed', err);
+    }
+  };
+
+  const handlePasswordSave = async () => {
+    if (!user || !newPassword.trim()) return;
+
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: user.id, newPassword: newPassword.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update password');
+      }
+
+      setNewPassword('');
+    } catch (err) {
+      console.error('Password update failed', err);
+    }
+  };
 
   return (
     <div className='p-7 text-lg transition-all ease-in-out duration-300'>
@@ -63,7 +111,10 @@ const AccountPage: React.FC = () => {
             className="px-4 py-2 border border-fg/20 rounded-lg outline-none focus:border-fg"
           />
 
-          <button className='px-4 py-2 border border-fg/20 rounded-lg hover:bg-fg hover:text-bg cursor-pointer'>
+          <button
+            onClick={handleNicknameSave}
+            className='px-4 py-2 border border-fg/20 rounded-lg hover:bg-fg hover:text-bg cursor-pointer'
+          >
             {t('save')}
           </button>
         </div>
@@ -79,7 +130,10 @@ const AccountPage: React.FC = () => {
             className="px-4 py-2 border border-fg/20 rounded-lg outline-none focus:border-fg"
           />
 
-          <button className='px-4 py-2 border border-fg/20 rounded-lg hover:bg-fg hover:text-bg cursor-pointer'>
+          <button
+            onClick={handlePasswordSave}
+            className='px-4 py-2 border border-fg/20 rounded-lg hover:bg-fg hover:text-bg cursor-pointer'
+          >
             {t('save')}
           </button>
         </div>

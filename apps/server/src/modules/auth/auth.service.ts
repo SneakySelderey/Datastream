@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ChangeNicknameDto } from './dto/change-nickname.dto';
 import { LoginDto } from './dto/login.dto';
 import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -54,6 +55,33 @@ export class AuthService {
     });
 
     return { message: 'Password updated successfully' };
+  }
+
+  async updateNickname(changeNicknameDto: ChangeNicknameDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: changeNicknameDto.id }
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { name: changeNicknameDto.newName }
+    });
+
+    if (existingUser && existingUser.id !== user.id) {
+      throw new ConflictException('User with this name already exists');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: changeNicknameDto.id },
+      data: { name: changeNicknameDto.newName }
+    });
+
+    const { password, ...result } = updatedUser;
+
+    return { user: result };
   }
 
   async login(loginDto: LoginDto) {

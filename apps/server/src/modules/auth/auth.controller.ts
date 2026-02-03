@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ChangeNicknameDto } from './dto/change-nickname.dto';
 import { LoginDto } from './dto/login.dto';
 import { Public } from './public.decorator';
 import { Res } from '@nestjs/common';
@@ -70,6 +71,11 @@ export class AuthController {
   @Patch('change-password')
   update(@Body() updateAuthDto: ChangePasswordDto) {
     return this.authService.updatePassword(updateAuthDto);
+  }
+
+  @Patch('change-nickname')
+  updateNickname(@Body() changeNicknameDto: ChangeNicknameDto) {
+    return this.authService.updateNickname(changeNicknameDto);
   }
 
   @Delete(':id')
