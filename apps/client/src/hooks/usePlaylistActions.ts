@@ -16,5 +16,22 @@ export const usePlaylistActions = () => {
     }
   };
 
-  return { addTracksToPlaylist };
+  const removeTracksFromPlaylist = async (playlistId: string, trackIds: string[]) => {
+    try {
+      const response = await fetch(`/api/playlists/${playlistId}/remove`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackIds }),
+      });
+
+      if (!response.ok) throw new Error('Failed to remove tracks');
+
+      return true;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  };
+
+  return { addTracksToPlaylist, removeTracksFromPlaylist };
 };

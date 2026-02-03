@@ -48,7 +48,9 @@ const resources = {
       "sortPlayed": "Recently Played",
       "sortPopular": "Most Played",
       "album": "Album",
-      "addToPlaylist": "Add to playlist"
+      "addToPlaylist": "Add to playlist",
+      "removeFromPlaylist": "Remove from playlist",
+      "errorRemovingTracks": "Failed to remove tracks"
     }
   },
   ru: {
@@ -97,7 +99,9 @@ const resources = {
       "sortPlayed": "Недавно прослушанные",
       "sortPopular": "Чаще всего проигрываемые",
       "album": "Альбом",
-      "addToPlaylist": "Добавить в плейлист"
+      "addToPlaylist": "Добавить в плейлист",
+      "removeFromPlaylist": "Удалить из плейлиста",
+      "errorRemovingTracks": "Не удалось удалить треки"
     }
   }
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -8,7 +8,7 @@ import { usePlayer } from '../context/PlayerContext';
 import AlbumHeader from '../components/AlbumHeader';
 import PlaylistHeader from '../components/PlaylistHeader';
 import Tracklist from '../components/Tracklist/Tracklist';
-import { type Album, type Playlist } from '../types';
+import { type Album, type Playlist, type Track } from '../types';
 
 import PlayIcon from '../assets/play.svg?react';
 import ShuffleIcon from '../assets/random-albums.svg?react';
@@ -24,14 +24,20 @@ const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ type = 'album' }) =
   const { playTrack, addTracks } = usePlayer();
 
   const { id } = useParams();
-  if (!id) {
-    return <div className="p-6">Error: album ID missing!</div>;
-  }
-
   const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>([]);
+  const [tracks, setTracks] = useState<Track[]>([]);
 
   const { album, isLoading, error } = useAlbum(id, type);
 
+  const isPlaylist = type === 'playlist';
+
+  useEffect(() => {
+    setTracks(album?.tracks ?? []);
+  }, [album]);
+
+  if (!id) {
+    return <div className="p-6">Error: album ID missing!</div>;
+  }
   if (isLoading) {
     return <div className="p-8">{t('loading')}</div>;
   }
@@ -41,9 +47,6 @@ const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ type = 'album' }) =
   if (!album) {
     return <div className="p-8">{t('nothingFound')}</div>;
   }
-
-  const tracks = album.tracks ?? [];
-  const isPlaylist = type === 'playlist';
 
   const handleShufflePlay = () => {
     if (!album || tracks.length === 0) return;
@@ -94,6 +97,10 @@ const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ type = 'album' }) =
           onPlayTrack={playTrack}
           selectedIds={selectedTrackIds}
           onSelectionChange={setSelectedTrackIds}
+          playlistId={isPlaylist ? id : undefined}
+          onTracksRemoved={(removedIds) => {
+            setTracks(prev => prev.filter(track => !removedIds.includes(track.id)));
+          }}
         />
       </div>
     </div>

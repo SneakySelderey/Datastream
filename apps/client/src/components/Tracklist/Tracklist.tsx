@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { TracklistModal } from './TracklistModal';
+import { usePlaylistActions } from '../../hooks/usePlaylistActions';
 
 import { type Track, formatTime } from '../../types';
 
@@ -10,20 +11,26 @@ interface TracklistProps {
   tracks: Track[];
   onPlayTrack: (track: Track, queue: Track[]) => void;
   showAlbum?: boolean;
-  selectedIds?: string[];
-  onSelectionChange?: (ids: string[]) => void;
+  selectedIds: string[];
+  onSelectionChange: (ids: string[]) => void;
+  playlistId?: string;
+  onTracksRemoved?: (removedIds: string[]) => void;
 }
 
 const Tracklist: React.FC<TracklistProps> = ({
   tracks,
   onPlayTrack,
   showAlbum = false,
-  selectedIds = [],
-  onSelectionChange
+  selectedIds,
+  onSelectionChange,
+  playlistId,
+  onTracksRemoved,
 }) => {
   const { t } = useTranslation();
+  const { removeTracksFromPlaylist } = usePlaylistActions();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const desktopGridClass = showAlbum
     ? 'md:grid-cols-[auto_auto_auto_auto_auto_repeat(5,1fr)]'
@@ -32,8 +39,6 @@ const Tracklist: React.FC<TracklistProps> = ({
   const isAllSelected = tracks.length > 0 && tracks.every(track => selectedIds.includes(track.id));
 
   const handleToggleTrack = (id: string) => {
-    if (!onSelectionChange) return;
-
     if (selectedIds.includes(id)) {
       onSelectionChange(selectedIds.filter(sid => sid !== id));
     } else {
@@ -42,8 +47,6 @@ const Tracklist: React.FC<TracklistProps> = ({
   };
 
   const handleToggleAll = () => {
-    if (!onSelectionChange) return;
-
     if (isAllSelected) {
       const currentTrackIds = tracks.map(t => t.id);
       onSelectionChange(selectedIds.filter(id => !currentTrackIds.includes(id)));
@@ -56,12 +59,27 @@ const Tracklist: React.FC<TracklistProps> = ({
 
    const handleSuccess = () => {
     alert(t('tracksAddedToPlaylist'));
-    if (onSelectionChange) onSelectionChange([]);
+    onSelectionChange([]);
+  };
+
+  const handleRemove = async () => {
+    if (!playlistId || selectedIds.length === 0) return;
+    setIsRemoving(true);
+    try {
+      await removeTracksFromPlaylist(playlistId, selectedIds);
+      if (onTracksRemoved) onTracksRemoved(selectedIds);
+      onSelectionChange([]);
+    } catch (e) {
+      console.error(e);
+      alert(t('errorRemovingTracks', 'Failed to remove tracks'));
+    } finally {
+      setIsRemoving(false);
+    }
   };
 
   return (
     <div>
-      {selectedIds.length > 0 && onSelectionChange && (
+      {selectedIds.length > 0 && (
         <div className="relative"> 
           <div className="absolute left-0 right-0 -top-20 z-10 p-3 bg-bg border border-fg/20 rounded-xl shadow-sm flex items-center
                           transition-all duration-300 ease-in-out">
@@ -73,6 +91,16 @@ const Tracklist: React.FC<TracklistProps> = ({
               >
                 {t('addToPlaylist')}
               </button>
+              {playlistId && (
+                <button
+                  onClick={handleRemove}
+                  disabled={isRemoving}
+                  className="flex items-center gap-2 px-4 py-1.5 border border-fg/30 text-sm rounded-lg cursor-pointer
+                             transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t('removeFromPlaylist', 'Remove from playlist')}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -85,15 +113,14 @@ const Tracklist: React.FC<TracklistProps> = ({
         <div className="col-span-full grid grid-cols-subgrid gap-x-6 items-center text-center
             text-fg font-bold p-3 border border-fg/25 rounded-t-xl transition-all duration-300 ease-in-out">
 
-          <div className="flex items-center justify-center w-5">
-            <input
-              type="checkbox"
-              checked={isAllSelected}
-              onChange={handleToggleAll}
-              className="w-4 h-4 accent-primary cursor-pointer"
-              disabled={!onSelectionChange}
-            />
-          </div>
+              <div className="flex items-center justify-center w-5">
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  onChange={handleToggleAll}
+                  className="w-4 h-4 accent-primary cursor-pointer"
+                />
+              </div>
 
           <p>#</p>
           <p className="text-left">{t('trackTitle')}</p>
@@ -128,7 +155,6 @@ const Tracklist: React.FC<TracklistProps> = ({
                   onChange={() => handleToggleTrack(track.id)}
                   onClick={(e) => e.stopPropagation()}
                   className="w-4 h-4 accent-primary cursor-pointer"
-                  disabled={!onSelectionChange}
                 />
               </div>
 
