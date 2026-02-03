@@ -5,7 +5,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAlbums } from '../hooks/useAlbums';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-import AlbumGrid from '../components/AlbumGrid';
+import CollectionGrid from '../components/CollectionGrid';
+import AlbumCard from '../components/AlbumCard';
 import PaginationControls from '../components/PaginationControls';
 import Filters from '../components/Filters';
 
@@ -94,9 +95,11 @@ const AlbumsPage = () => {
       />
 
       {!isLoading && !error && (
-        <AlbumGrid
-          albums={albums} 
-          onSelectAlbum={handleSelectAlbum} 
+        <CollectionGrid
+          items={albums}
+          renderItem={(album) => (
+            <AlbumCard album={album} onSelect={handleSelectAlbum} />
+          )}
         />
       )}
 

@@ -6,7 +6,8 @@ import { useAlbums } from '../hooks/useAlbums';
 import { useArtist } from '../hooks/useArtist';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-import AlbumGrid from '../components/AlbumGrid';
+import CollectionGrid from '../components/CollectionGrid';
+import AlbumCard from '../components/AlbumCard';
 import PaginationControls from '../components/PaginationControls';
 
 import { type Album } from '../types';
@@ -59,9 +60,11 @@ const ArtistDetailsPage = () => {
       {error && <p>{error}</p>}
 
       {!isLoading && !error && albums.length > 0 && (
-        <AlbumGrid
-          albums={albums} 
-          onSelectAlbum={handleSelectAlbum} 
+        <CollectionGrid
+          items={albums}
+          renderItem={(album) => (
+            <AlbumCard album={album} onSelect={handleSelectAlbum} />
+          )}
         />
       )}
       

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { type Album } from '../types';
+import { type PlaylistSummary } from '../types';
 
 export const usePlaylists = (page: number, limit: number, search: string) => {
-  const [playlists, setPlaylists] = useState<Album[]>([]);
+  const [playlists, setPlaylists] = useState<PlaylistSummary[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +19,17 @@ export const usePlaylists = (page: number, limit: number, search: string) => {
       if (!response.ok) throw new Error('Failed to fetch playlists');
       
       const data = await response.json();
-      setPlaylists(data);
-      setTotal(data.length);
+
+      const normalized: PlaylistSummary[] = data.map((playlist: any) => ({
+        id: playlist.id,
+        title: playlist.title,
+        trackCount: playlist.trackCount ?? 0,
+        updatedAt: playlist.updatedAt ?? playlist.date ?? '',
+        coverUrl: playlist.cover ?? null,
+      }));
+
+      setPlaylists(normalized);
+      setTotal(normalized.length);
     } catch (e: any) {
       setError(e.message);
     } finally {

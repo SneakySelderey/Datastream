@@ -40,6 +40,23 @@ export interface Album {
   size: number;
 }
 
+export interface Playlist {
+  id: string;
+  title: string;
+  userId: string;
+  tracks: Track[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlaylistSummary {
+  id: string;
+  title: string;
+  trackCount: number;
+  updatedAt: string;
+  coverUrl?: string | null;
+}
+
 export interface FilterState {
   search: string;
   genre: string;

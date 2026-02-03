@@ -1,0 +1,28 @@
+import { type Album } from '../types';
+
+interface AlbumCardProps {
+  album: Album;
+  onSelect: (album: Album) => void;
+}
+
+const AlbumCard = ({ album, onSelect }: AlbumCardProps) => {
+  return (
+    <div
+      className="p-2 hover:bg-hv transition-colors duration-300 cursor-pointer"
+      onClick={() => onSelect(album)}
+    >
+      <div>
+        <img
+          src={album.cover}
+          alt={`${album.title} album cover`}
+        />
+      </div>
+      <h3 className="mt-1 truncate">{album.title}</h3>
+      <p className="text-sm text-fg">
+        {album.artists[0]?.name} &bull; {album.date}
+      </p>
+    </div>
+  );
+};
+
+export default AlbumCard;

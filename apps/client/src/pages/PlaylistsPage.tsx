@@ -5,10 +5,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePlaylists } from '../hooks/usePlaylists';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-import AlbumGrid from '../components/AlbumGrid';
+import CollectionGrid from '../components/CollectionGrid';
+import PlaylistCard from '../components/PlaylistCard';
 import PaginationControls from '../components/PaginationControls';
 
-import { type Album } from '../types';
+import { type PlaylistSummary } from '../types';
 
 const PlaylistsPage = () => {
   const { t } = useTranslation();
@@ -40,7 +41,7 @@ const PlaylistsPage = () => {
     setCurrentPage(1);
   };
 
-  const handleSelectPlaylist = (playlist: Album) => {
+  const handleSelectPlaylist = (playlist: PlaylistSummary) => {
     navigate(`/playlists/${playlist.id}`);
   };
 
@@ -60,9 +61,11 @@ const PlaylistsPage = () => {
       </div>
 
       {!isLoading && !error && (
-        <AlbumGrid
-          albums={playlists} 
-          onSelectAlbum={handleSelectPlaylist}
+        <CollectionGrid
+          items={playlists}
+          renderItem={(playlist) => (
+            <PlaylistCard playlist={playlist} onSelect={handleSelectPlaylist} />
+          )}
         />
       )}
 
