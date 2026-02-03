@@ -59,7 +59,8 @@ const AccountPage: React.FC = () => {
 
       setNewNickname('');
     } catch (err) {
-      console.error('Nickname update failed', err);
+      const message = (err as Error).message || 'Failed to update nickname';
+      alert(message);
     }
   };
 
