@@ -27,7 +27,7 @@ const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ type = 'album' }) =
   const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
 
-  const { album, isLoading, error } = useAlbum(id, type);
+  const { album, isLoading, error } = useAlbum(id ?? '', type);
 
   const isPlaylist = type === 'playlist';
 
