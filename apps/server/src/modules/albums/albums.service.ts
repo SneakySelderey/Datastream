@@ -77,13 +77,28 @@ export class AlbumsService {
 
       const paged = sorted.slice(skip, skip + Number(limit)).map(({ totalPlays, ...album }) => album);
 
+      const allGenres = await this.prisma.genre.findMany({ select: { name: true } });
+      const allAlbumsDates = await this.prisma.album.findMany({
+        select: { date: true },
+        distinct: ['date'],
+        where: { date: { not: null } },
+      });
+
+      const uniqueYears = [...new Set(
+        allAlbumsDates.map(a => a.date?.substring(0, 4)).filter(Boolean)
+      )].sort().reverse();
+
       return {
         data: paged,
         total: sorted.length,
+        meta: {
+          genres: allGenres.map(g => g.name),
+          years: uniqueYears,
+        },
       };
     }
 
-    const [albums, total] = await Promise.all([
+    const [albums, total, allGenres, allAlbumsDates] = await Promise.all([
       this.prisma.album.findMany({
         skip,
         take: Number(limit),
@@ -99,6 +114,12 @@ export class AlbumsService {
         orderBy,
       }),
       this.prisma.album.count({ where }),
+      this.prisma.genre.findMany({ select: { name: true } }),
+      this.prisma.album.findMany({
+        select: { date: true },
+        distinct: ['date'],
+        where: { date: { not: null } },
+      }),
     ]);
 
     const data = albums.map(album => {
@@ -106,7 +127,18 @@ export class AlbumsService {
       return { ...album, coverPath };
     });
 
-    return { data, total };
+    const uniqueYears = [...new Set(
+      allAlbumsDates.map(a => a.date?.substring(0, 4)).filter(Boolean)
+    )].sort().reverse();
+
+    return {
+      data,
+      total,
+      meta: {
+        genres: allGenres.map(g => g.name),
+        years: uniqueYears,
+      },
+    };
   }
   
   async findOne(id: string, userId: string) {

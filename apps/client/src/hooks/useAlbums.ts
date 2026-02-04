@@ -19,9 +19,8 @@ export const useAlbums = (
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { libraryVersion } = usePlayer();
-
-  const availableGenres = ['Ambient', 'Classical'];
-  const availableYears = ['2025'];
+  const [availableGenres, setAvailableGenres] = useState<string[]>([]);
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchAlbums = async () => {
@@ -48,6 +47,8 @@ export const useAlbums = (
 
         setAlbums(data.data ?? []);
         setTotal(data.total ?? 0);
+        setAvailableGenres(data.meta?.genres ?? []);
+        setAvailableYears(data.meta?.years ?? []);
       } catch (e) {
         setError('Cannot load albums.');
         console.error(e);

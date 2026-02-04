@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import Dropdown from './Dropdown';
@@ -42,6 +42,18 @@ const Filters: React.FC<FiltersProps> = ({
       onSortChange(option.value);
     }
   };
+
+  useEffect(() => {
+    if (genre && !genres.includes(genre)) {
+      onGenreChange('');
+    }
+  }, [genre, genres, onGenreChange]);
+
+  useEffect(() => {
+    if (year && !years.includes(year)) {
+      onYearChange('');
+    }
+  }, [year, years, onYearChange]);
 
   return (
     <div className="flex flex-wrap gap-4">
