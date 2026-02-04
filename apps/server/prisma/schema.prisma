@@ -63,6 +63,7 @@ model Track {
   coverPath   String?
 
   playlists  Playlist[]
+  playStats  TrackPlay[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -75,9 +76,25 @@ model User {
   password    String
 
   playlists   Playlist[]
+  trackPlays  TrackPlay[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+model TrackPlay {
+  id        String   @id @default(uuid())
+  userId    String
+  trackId   String
+  plays     Int      @default(0)
+
+  user      User     @relation(fields: [userId], references: [id])
+  track     Track    @relation(fields: [trackId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, trackId])
 }
 
 model Playlist {

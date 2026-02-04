@@ -1,5 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Param, Req } from '@nestjs/common';
 import { AlbumsService } from './albums.service';
+
+interface RequestWithUser {
+  user: {
+    id: string;
+  };
+}
 
 @Controller('albums')
 export class AlbumsController {
@@ -11,7 +17,7 @@ export class AlbumsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.albumsService.findOne(id);
+  findOne(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.albumsService.findOne(id, req.user.id);
   }
 }

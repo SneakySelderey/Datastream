@@ -14,13 +14,18 @@ export class AlbumsService {
     });
   }
   
-  async findOne(id: string) {
+  async findOne(id: string, userId: string) {
     const album = await this.prisma.album.findUnique({
       where: { id },
       include: {
         artists: true,
         tracks: {
-          include: { artists: true, genres: true, album: true },
+          include: {
+            artists: true,
+            genres: true,
+            album: true,
+            playStats: { where: { userId } },
+          },
           orderBy: { number: 'asc' },
         },
       },
@@ -28,6 +33,11 @@ export class AlbumsService {
     
     if (!album) return null;
 
-    return album;
+    const tracks = album.tracks.map(({ playStats, ...rest }) => ({
+      ...rest,
+      plays: playStats?.[0]?.plays ?? 0,
+    }));
+
+    return { ...album, tracks };
   }
 }

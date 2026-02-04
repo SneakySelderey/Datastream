@@ -21,6 +21,7 @@ export interface Track {
   playlists?: Playlist[];
   createdAt: string;
   updatedAt: string;
+  plays: number;
 }
 
 export interface Genre {

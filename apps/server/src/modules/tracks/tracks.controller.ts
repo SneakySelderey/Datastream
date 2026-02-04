@@ -1,5 +1,11 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, Post, Req, UnauthorizedException } from '@nestjs/common';
 import { TracksService } from './tracks.service';
+
+interface RequestWithUser {
+  user: {
+    id: string;
+  };
+}
 
 @Controller('tracks')
 export class TracksController {
@@ -7,6 +13,7 @@ export class TracksController {
 
   @Get()
   findAll(
+    @Req() req: RequestWithUser,
     @Query('page') page = 1,
     @Query('limit') limit = 18,
     @Query('search') search = '',
@@ -14,11 +21,16 @@ export class TracksController {
     @Query('year') year = '',
     @Query('sort') sort = 'default',
   ) {
-    return this.tracksService.findAll(+page, +limit, search, genre, year, sort);
+    return this.tracksService.findAll(req.user.id, +page, +limit, search, genre, year, sort);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tracksService.findOne(id);
+  findOne(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.tracksService.findOne(id, req.user.id);
+  }
+
+  @Post(':id/plays')
+  incrementPlays(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.tracksService.incrementPlays(id, req.user.id);
   }
 }

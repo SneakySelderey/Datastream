@@ -33,7 +33,7 @@ export class PlaylistsService {
       where.title = { contains: search };
     }
 
-    return this.prisma.playlist.findMany({
+    const playlists = await this.prisma.playlist.findMany({
       where,
       include: {
         _count: { select: { tracks: true } },
@@ -45,6 +45,8 @@ export class PlaylistsService {
       },
       orderBy: { title: 'asc' },
     });
+
+    return playlists;
   }
 
   async findOne(id: string, userId: string) {
@@ -56,6 +58,7 @@ export class PlaylistsService {
             album: true,
             artists: true,
             genres: true,
+            playStats: { where: { userId } },
           },
         },
       },
@@ -67,7 +70,12 @@ export class PlaylistsService {
       throw new ForbiddenException('You do not have access to this playlist');
     }
 
-    return playlist;
+    const tracks = playlist.tracks.map(({ playStats, ...rest }) => ({
+      ...rest,
+      plays: playStats?.[0]?.plays ?? 0,
+    }));
+
+    return { ...playlist, tracks };
   }
 
   async update(id: string, updatePlaylistDto: UpdatePlaylistDto) {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 
@@ -7,6 +7,7 @@ export class TracksService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(
+    userId: string,
     page: number,
     limit: number,
     search?: string,
@@ -41,20 +42,28 @@ export class TracksService {
       orderBy = { id: 'asc' }; 
     }
 
+    const include: Prisma.TrackInclude = {
+      album: true,
+      artists: true,
+      genres: true,
+      playStats: { where: { userId } },
+    };
+
     const [tracks, total] = await Promise.all([
       this.prisma.track.findMany({
         skip,
         take: Number(limit),
         where,
         orderBy,
-        include: {
-          album: true,
-          artists: true,
-          genres: true,
-        },
+        include,
       }),
       this.prisma.track.count({ where }),
     ]);
+
+    const data = tracks.map(({ playStats, ...rest }) => ({
+      ...rest,
+      plays: playStats?.[0]?.plays ?? 0,
+    }));
 
     const allGenres = await this.prisma.genre.findMany({ select: { name: true } });
     const allTracksDates = await this.prisma.track.findMany({ 
@@ -68,7 +77,7 @@ export class TracksService {
     )].sort().reverse();
 
     return {
-      data: tracks,
+      data,
       total,
       meta: {
         genres: allGenres.map(g => g.name),
@@ -77,10 +86,34 @@ export class TracksService {
     };
   }
 
-  async findOne(id: string) {
-    return this.prisma.track.findUnique({
+  async findOne(id: string, userId: string) {
+    const include: Prisma.TrackInclude = {
+      album: true,
+      artists: true,
+      genres: true,
+      playStats: { where: { userId } },
+    };
+
+    const track = await this.prisma.track.findUnique({
       where: { id },
-      include: { album: true, artists: true, genres: true }
+      include,
     });
+
+    if (!track) return null;
+
+    const { playStats, ...rest } = track;
+    return { ...rest, plays: playStats?.[0]?.plays ?? 0 };
+  }
+
+  async incrementPlays(trackId: string, userId: string) {
+    if (!userId) throw new UnauthorizedException('User not found');
+
+    const result = await this.prisma.trackPlay.upsert({
+      where: { userId_trackId: { userId, trackId } },
+      create: { userId, trackId, plays: 1 },
+      update: { plays: { increment: 1 } },
+    });
+
+    return { trackId, plays: result.plays };
   }
 }
