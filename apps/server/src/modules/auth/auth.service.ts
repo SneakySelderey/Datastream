@@ -110,15 +110,42 @@ export class AuthService {
     };
   }
 
-  findAll() {
-    return `This action returns all auth`;
-  }
+  async removeUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+    await this.prisma.$transaction(async (tx) => {
+      await tx.trackPlay.deleteMany({
+        where: { userId },
+      });
+
+      const playlists = await tx.playlist.findMany({
+        where: { userId },
+        select: { id: true },
+      });
+
+      for (const playlist of playlists) {
+        await tx.playlist.update({
+          where: { id: playlist.id },
+          data: { tracks: { set: [] } },
+        });
+      }
+
+      await tx.playlist.deleteMany({
+        where: { userId },
+      });
+
+      await tx.user.delete({
+        where: { id: userId },
+      });
+    });
+
+    return { message: 'User deleted' };
   }
 }

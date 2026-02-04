@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -58,16 +58,6 @@ export class AuthController {
     return { user: req.user };
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
-  }
-
   @Patch('change-password')
   update(@Body() updateAuthDto: ChangePasswordDto) {
     return this.authService.updatePassword(updateAuthDto);
@@ -78,8 +68,19 @@ export class AuthController {
     return this.authService.updateNickname(changeNicknameDto);
   }
 
+  @Delete('me')
+  async removeMe(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const userId = req.user && typeof req.user === 'object' ? (req.user as { id?: string }).id : undefined;
+    if (!userId) {
+      throw new UnauthorizedException('User not found');
+    }
+    const result = await this.authService.removeUser(userId);
+    res.clearCookie('access_token');
+    return result;
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+    return this.authService.removeUser(id);
   }
 }

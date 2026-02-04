@@ -1,7 +1,8 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
+import { PrismaService } from '../prisma/prisma.service';
 
 const extractJwtFromCookie = (req: Request) => {
   if (req && req.cookies) {
@@ -12,7 +13,7 @@ const extractJwtFromCookie = (req: Request) => {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         extractJwtFromCookie,
@@ -24,6 +25,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    return { id: payload.sub, name: payload.name };
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, name: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User no longer exists');
+    }
+
+    return user;
   }
 }
