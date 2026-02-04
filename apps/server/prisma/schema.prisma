@@ -88,8 +88,8 @@ model TrackPlay {
   trackId   String
   plays     Int      @default(0)
 
-  user      User     @relation(fields: [userId], references: [id])
-  track     Track    @relation(fields: [trackId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -102,7 +102,7 @@ model Playlist {
   title     String
   
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   tracks    Track[]
   

@@ -120,30 +120,8 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.trackPlay.deleteMany({
-        where: { userId },
-      });
-
-      const playlists = await tx.playlist.findMany({
-        where: { userId },
-        select: { id: true },
-      });
-
-      for (const playlist of playlists) {
-        await tx.playlist.update({
-          where: { id: playlist.id },
-          data: { tracks: { set: [] } },
-        });
-      }
-
-      await tx.playlist.deleteMany({
-        where: { userId },
-      });
-
-      await tx.user.delete({
-        where: { id: userId },
-      });
+    await this.prisma.user.delete({
+      where: { id: userId },
     });
 
     return { message: 'User deleted' };

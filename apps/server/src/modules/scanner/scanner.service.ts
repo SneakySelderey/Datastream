@@ -271,10 +271,6 @@ export class ScannerService implements OnModuleInit {
 
     if (missingIds.length > 0) {
       await this.prisma.$transaction(async (tx) => {
-        await tx.trackPlay.deleteMany({
-          where: { trackId: { in: missingIds } },
-        });
-
         for (const id of missingIds) {
           await tx.track.update({
             where: { id },
