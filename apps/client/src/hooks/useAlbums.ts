@@ -46,8 +46,8 @@ export const useAlbums = (
 
         const data = await response.json();
 
-        setAlbums(data);
-        setTotal(data.length);
+        setAlbums(data.data ?? []);
+        setTotal(data.total ?? 0);
       } catch (e) {
         setError('Cannot load albums.');
         console.error(e);
