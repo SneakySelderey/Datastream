@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePlaylists } from '../../hooks/usePlaylists';
 import { usePlaylistActions } from '../../hooks/usePlaylistActions';
@@ -24,6 +24,7 @@ export const TracklistModal: React.FC<TracklistModalProps> = ({
   const [selectedTitle, setSelectedTitle] = useState<string>('');
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const didInitMode = useRef(false);
 
   const options = useMemo(() => {
     return [...playlists]
@@ -33,20 +34,20 @@ export const TracklistModal: React.FC<TracklistModalProps> = ({
   const hasPlaylists = options.length > 0;
 
   useEffect(() => {
-    if (!hasPlaylists && mode === 'select') {
-      setMode('create');
-      setSelectedTitle('');
-      return;
-    }
-
-    if (hasPlaylists && mode === 'create') {
-      setMode('select');
+    if (!didInitMode.current && !isLoading) {
+      if (!hasPlaylists) {
+        setMode('create');
+        setSelectedTitle('');
+      } else {
+        setMode('select');
+      }
+      didInitMode.current = true;
     }
 
     if (mode === 'select' && !selectedTitle && options.length > 0) {
       setSelectedTitle(options[0]);
     }
-  }, [mode, selectedTitle, options, hasPlaylists]);
+  }, [mode, selectedTitle, options, hasPlaylists, isLoading]);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
