@@ -14,6 +14,7 @@ const defaultTrack: Track = {
   format: '',
   createdAt: new Date(0).toISOString(),
   updatedAt: new Date(0).toISOString(),
+  plays: 0,
   artists: [{
     id: '0',
     name: '...',

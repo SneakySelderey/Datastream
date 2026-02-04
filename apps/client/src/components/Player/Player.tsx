@@ -76,6 +76,19 @@ const Player: React.FC = () => {
       setCurrentTime(newTime);
     }
   };
+
+  const handleTrackEnded = async () => {
+    if (currentTrack.id && currentTrack.id !== '0') {
+      try {
+        await fetch(`/api/tracks/${currentTrack.id}/plays`, { method: 'POST' });
+      } catch (e) {
+        console.error('Failed to increment play count', e);
+      }
+    }
+
+    if (hasNext) handleNext();
+    else togglePlay();
+  };
   
   const clampedCurrentTime =
     duration > 0 ? Math.min(Math.max(currentTime, 0), duration) : 0;
@@ -108,10 +121,7 @@ const Player: React.FC = () => {
         src={buildTrackUrl(currentTrack.id)}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        onEnded={() => {
-            if (hasNext) handleNext();
-            else togglePlay();
-        }}
+        onEnded={handleTrackEnded}
       />
 
       <div className="flex items-center gap-5">
