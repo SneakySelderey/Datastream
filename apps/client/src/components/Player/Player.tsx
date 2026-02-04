@@ -15,7 +15,7 @@ import PlayQueue from './PlayQueue';
 import { buildCoverUrl, buildTrackUrl, formatTime } from '../../types';
 
 const Player: React.FC = () => {
-  const { currentTrack, isPlaying, queue, togglePlay, setTrack } = usePlayer();
+  const { currentTrack, isPlaying, queue, togglePlay, setTrack, setTrackPlays } = usePlayer();
 
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
@@ -80,7 +80,12 @@ const Player: React.FC = () => {
   const handleTrackEnded = async () => {
     if (currentTrack.id && currentTrack.id !== '0') {
       try {
-        await fetch(`/api/tracks/${currentTrack.id}/plays`, { method: 'POST' });
+        const response = await fetch(`/api/tracks/${currentTrack.id}/plays`, { method: 'POST' });
+        if (response.ok) {
+          const payload = await response.json();
+          
+          setTrackPlays(payload.trackId, payload.plays);
+        }
       } catch (e) {
         console.error('Failed to increment play count', e);
       }

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { type Track, type FilterState, type SortMode } from '../types';
+import { usePlayer } from '../context/PlayerContext';
 
 interface TracksResponse {
   data: Track[];
@@ -18,6 +19,7 @@ export const useTracks = (page: number, limit: number, filters: FilterState, sor
 
   const [availableGenres, setAvailableGenres] = useState<string[]>([]);
   const [availableYears, setAvailableYears] = useState<string[]>([]);
+  const { playCounts } = usePlayer();
 
   useEffect(() => {
     const fetchTracks = async () => {
@@ -58,5 +60,13 @@ export const useTracks = (page: number, limit: number, filters: FilterState, sor
 
   }, [page, limit, filters, sortMode]);
 
-  return { tracks, total, isLoading, error, availableGenres, availableYears };
+  const tracksWithPlays = useMemo(
+    () => tracks.map(track => {
+      const plays = playCounts[track.id];
+      return plays === undefined ? track : { ...track, plays };
+    }),
+    [tracks, playCounts]
+  );
+
+  return { tracks: tracksWithPlays, total, isLoading, error, availableGenres, availableYears };
 };

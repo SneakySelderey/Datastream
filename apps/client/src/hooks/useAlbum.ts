@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 import { type Album, type Playlist } from '../types';
+import { usePlayer } from '../context/PlayerContext';
 
 export const useAlbum = (id: string, type: 'album' | 'playlist' = 'album') => {
   const [album, setAlbum] = useState<Album | Playlist>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { playCounts } = usePlayer();
 
   useEffect(() => {
     const fetchAlbums = async () => {
@@ -37,5 +39,14 @@ export const useAlbum = (id: string, type: 'album' | 'playlist' = 'album') => {
 
   }, [id, type]);
 
-  return { album, isLoading, error };
+  const albumWithPlays = useMemo(() => {
+    const tracks = album?.tracks?.map(track => {
+      const plays = playCounts[track.id];
+      return { ...track, plays };
+    });
+
+    return { ...album, tracks };
+  }, [album, playCounts]);
+
+  return { album: albumWithPlays, isLoading, error };
 };
