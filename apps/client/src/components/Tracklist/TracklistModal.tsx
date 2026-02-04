@@ -82,7 +82,7 @@ export const TracklistModal: React.FC<TracklistModalProps> = ({
         <div className="space-y-1">
           <h3 className="text-xl">{t('addToPlaylist')}</h3>
           <p className="text-sm">
-            {t('addingTracksMessage', `Adding ${trackIds.length} tracks to...`)}
+            {t('addingTracksMessage', { count: trackIds.length })}
           </p>
         </div>
 
