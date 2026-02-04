@@ -134,7 +134,7 @@ const Tracklist: React.FC<TracklistProps> = ({
           <p className="hidden md:block">{t('plays')}</p>
           <p className="hidden md:block">{t('quality')}</p>
           <p className="hidden md:block">{t('fileSize')}</p>
-          <p className="hidden md:block">{t('genres')}</p>
+          <p className="hidden md:block">{t('genre')}</p>
           <p className="hidden md:block"></p>
         </div>
 
@@ -194,7 +194,7 @@ const Tracklist: React.FC<TracklistProps> = ({
               <p className="hidden md:block">{track.plays}</p>
               <p className="hidden md:block">{track.format}</p>
               <p className="hidden md:block">{(track.size / 1048576).toFixed(2)} MB</p>
-              <p className="hidden md:block text-wrap">{Array.isArray(track.genres) ? track.genres.map(g => g.name).join(', ') : ''}</p>
+              <p className="hidden md:block">{track.genres?.map(g => g.name)[0] ?? '—'}</p>
               <div className="hidden md:flex justify-center">...</div>
             </div>
           )
