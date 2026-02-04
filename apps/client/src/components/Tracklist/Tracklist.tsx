@@ -33,8 +33,8 @@ const Tracklist: React.FC<TracklistProps> = ({
   const [isRemoving, setIsRemoving] = useState(false);
 
   const desktopGridClass = showAlbum
-    ? 'md:grid-cols-[auto_auto_auto_auto_auto_repeat(6,1fr)]'
-    : 'md:grid-cols-[auto_auto_auto_auto_repeat(6,1fr)]';
+    ? 'md:grid-cols-[auto_auto_minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_minmax(0,1fr)_auto]'
+    : 'md:grid-cols-[auto_auto_minmax(0,2fr)_minmax(0,1.4fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_minmax(0,1fr)_auto]';
 
   const isAllSelected = tracks.length > 0 && tracks.every(track => selectedIds.includes(track.id));
 
@@ -106,7 +106,7 @@ const Tracklist: React.FC<TracklistProps> = ({
         </div>
       )}
 
-      <div className={`grid gap-x-6 text-sm
+        <div className={`grid w-full gap-x-6 text-sm
           grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,1fr)_auto]
           ${desktopGridClass}`}>
 
@@ -124,11 +124,12 @@ const Tracklist: React.FC<TracklistProps> = ({
 
           <p>#</p>
           <p className="text-left">{t('trackTitle')}</p>
-          <p className="text-left">{t('artist')}</p>
 
           {showAlbum && (
             <p className="hidden text-left md:block">{t('album')}</p>
           )}
+
+          <p className="text-left">{t('artist')}</p>
 
           <p>{t('duration')}</p>
           <p className="hidden md:block">{t('plays')}</p>
@@ -162,20 +163,8 @@ const Tracklist: React.FC<TracklistProps> = ({
               <p className="py-3">{index + 1}</p>
               <p className="text-left text-wrap">{track.title}</p>
 
-              {track.artists?.[0]?.id ? (
-                <Link
-                  to={`/artists/${track.artists[0].id}`}
-                  className="hover:underline relative text-link text-left"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {track.artists[0]?.name}
-                </Link>
-              ) : (
-                <span className="text-left text-fg/70">—</span>
-              )}
-
               {showAlbum && (
-                <div className="hidden md:block text-link text-left">
+                <div className="hidden md:block text-link text-left text-wrap">
                   {track.albumId ? (
                     <Link
                       to={`/albums/${track.albumId}`}
@@ -188,6 +177,18 @@ const Tracklist: React.FC<TracklistProps> = ({
                     <span className="text-fg/70">—</span>
                   )}
                 </div>
+              )}
+
+              {track.artists?.[0]?.id ? (
+                <Link
+                  to={`/artists/${track.artists[0].id}`}
+                  className="hover:underline relative text-link text-left"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {track.artists[0]?.name}
+                </Link>
+              ) : (
+                <span className="text-left text-fg/70">—</span>
               )}
 
               <p>{formatTime(track.duration)}</p>
