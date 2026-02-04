@@ -50,7 +50,8 @@ const resources = {
       "album": "Album",
       "addToPlaylist": "Add to playlist",
       "removeFromPlaylist": "Remove from playlist",
-      "errorRemovingTracks": "Failed to remove tracks"
+      "errorRemovingTracks": "Failed to remove tracks",
+      "rescanLibrary": "Rescan library"
     }
   },
   ru: {
@@ -101,7 +102,8 @@ const resources = {
       "album": "Альбом",
       "addToPlaylist": "Добавить в плейлист",
       "removeFromPlaylist": "Удалить из плейлиста",
-      "errorRemovingTracks": "Не удалось удалить треки"
+      "errorRemovingTracks": "Не удалось удалить треки",
+      "rescanLibrary": "Пересканировать библиотеку"
     }
   }
 };

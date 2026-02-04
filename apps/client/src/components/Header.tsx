@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -23,6 +23,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
   const { t } = useTranslation();
   const location = useLocation();
+  const [isRescanning, setIsRescanning] = useState(false);
 
   const generatePageTitle = (): string => {
     const { pathname } = location;
@@ -40,6 +41,18 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
   };
   
   const pageTitle = generatePageTitle();
+
+  const handleRescan = async () => {
+    if (isRescanning) return;
+    setIsRescanning(true);
+    try {
+      await fetch('/api/scanner/rescan', { method: 'POST' });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsRescanning(false);
+    }
+  };
 
   return (
     <div className='fixed top-0 left-0 right-0 p-3 pr-6 pl-6 bg-bg text-fg z-50 shadow-md flex justify-between items-center
@@ -66,7 +79,14 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
           <ThemeIcon className='w-6 h-6 cursor-pointer fill-current' />
         </button>
 
-        <UpdateIcon className='w-6 h-6 cursor-pointer stroke-current' />
+        <button
+          onClick={handleRescan}
+          title={t('rescanLibrary', 'Rescan library')}
+          aria-label={t('rescanLibrary', 'Rescan library')}
+          disabled={isRescanning}
+        >
+          <UpdateIcon className='w-6 h-6 cursor-pointer stroke-current' />
+        </button>
         
         <Link to='/account'>
           <UserIcon className='w-6 h-6 cursor-pointer fill-current' />
