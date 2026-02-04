@@ -90,7 +90,7 @@ export interface FilterState {
 export type SortMode = 'default' | 'random' | 'recently-added' | 'recently-played' | 'most-played';
 
 export const formatTime = (timeInSeconds: number): string => {
-  if (!timeInSeconds || isNaN(timeInSeconds)) return '00:00';
+  if (!timeInSeconds || isNaN(timeInSeconds)) return '0:00';
 
   const minutes = Math.floor(timeInSeconds / 60);
   const seconds = Math.floor(timeInSeconds % 60);
