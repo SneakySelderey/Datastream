@@ -23,7 +23,6 @@ export const TracklistModal: React.FC<TracklistModalProps> = ({
   const [mode, setMode] = useState<'select' | 'create'>('select');
   const [selectedTitle, setSelectedTitle] = useState<string>('');
   const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const didInitMode = useRef(false);
 
   const options = useMemo(() => {
@@ -50,7 +49,6 @@ export const TracklistModal: React.FC<TracklistModalProps> = ({
   }, [mode, selectedTitle, options, hasPlaylists, isLoading]);
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
     try {
       let targetPlaylistId = '';
 
@@ -69,8 +67,6 @@ export const TracklistModal: React.FC<TracklistModalProps> = ({
     } catch (e) {
       console.error(e);
       alert(t('errorAddingTracks'));
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
