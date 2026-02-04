@@ -7,7 +7,7 @@ export const useAlbum = (id: string, type: 'album' | 'playlist' = 'album') => {
   const [album, setAlbum] = useState<Album | Playlist>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { playCounts } = usePlayer();
+  const { playCounts, libraryVersion } = usePlayer();
 
   useEffect(() => {
     const fetchAlbums = async () => {
@@ -37,7 +37,7 @@ export const useAlbum = (id: string, type: 'album' | 'playlist' = 'album') => {
 
     fetchAlbums();
 
-  }, [id, type]);
+  }, [id, type, libraryVersion]);
 
   const albumWithPlays = useMemo(() => {
     const tracks = album?.tracks?.map(track => {

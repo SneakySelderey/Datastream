@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { type ArtistListItem, type SortMode } from '../types';
+import { usePlayer } from '../context/PlayerContext';
 
 interface ApiArtistResponse {
   data: ArtistListItem[];
@@ -16,6 +17,7 @@ export const useArtists = (
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { libraryVersion } = usePlayer();
 
   useEffect(() => {
     const fetchArtists = async () => {
@@ -50,7 +52,7 @@ export const useArtists = (
 
     fetchArtists();
 
-  }, [page, limit, search, sortMode]);
+  }, [page, limit, search, sortMode, libraryVersion]);
 
   return { artists, total, isLoading, error };
 };

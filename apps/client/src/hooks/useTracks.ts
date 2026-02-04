@@ -19,7 +19,7 @@ export const useTracks = (page: number, limit: number, filters: FilterState, sor
 
   const [availableGenres, setAvailableGenres] = useState<string[]>([]);
   const [availableYears, setAvailableYears] = useState<string[]>([]);
-  const { playCounts } = usePlayer();
+  const { playCounts, libraryVersion } = usePlayer();
 
   useEffect(() => {
     const fetchTracks = async () => {
@@ -58,7 +58,7 @@ export const useTracks = (page: number, limit: number, filters: FilterState, sor
 
     fetchTracks();
 
-  }, [page, limit, filters, sortMode]);
+  }, [page, limit, filters, sortMode, libraryVersion]);
 
   const tracksWithPlays = useMemo(
     () => tracks.map(track => {

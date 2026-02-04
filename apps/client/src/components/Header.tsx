@@ -6,6 +6,7 @@ import UpdateIcon from '../assets/update.svg?react';
 import UserIcon from '../assets/user.svg?react';
 import ThemeIcon from '../assets/theme.svg?react';
 import MenuIcon from '../assets/burger-menu.svg?react';
+import { usePlayer } from '../context/PlayerContext';
 
 const pageTitleKeys: { [key: string]: string } = {
   'albums': 'albums',
@@ -24,6 +25,7 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const [isRescanning, setIsRescanning] = useState(false);
+  const { bumpLibraryVersion } = usePlayer();
 
   const generatePageTitle = (): string => {
     const { pathname } = location;
@@ -47,6 +49,7 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
     setIsRescanning(true);
     try {
       await fetch('/api/scanner/rescan', { method: 'POST' });
+      bumpLibraryVersion();
     } catch (e) {
       console.error(e);
     } finally {

@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { type PlaylistListItem } from '../types';
+import { usePlayer } from '../context/PlayerContext';
 
 export const usePlaylists = (page: number, limit: number, search: string) => {
   const [playlists, setPlaylists] = useState<PlaylistListItem[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { libraryVersion } = usePlayer();
 
   const fetchPlaylists = useCallback(async () => {
     setIsLoading(true);
@@ -26,7 +28,7 @@ export const usePlaylists = (page: number, limit: number, search: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit, search]);
+  }, [page, limit, search, libraryVersion]);
 
   useEffect(() => {
     fetchPlaylists();

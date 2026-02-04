@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import { type Album, type FilterState, type SortMode } from '../types';
+import { usePlayer } from '../context/PlayerContext';
 
 const DEFAULT_FILTERS: FilterState = {
   search: '',
@@ -17,6 +18,7 @@ export const useAlbums = (
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { libraryVersion } = usePlayer();
 
   const availableGenres = ['Ambient', 'Classical'];
   const availableYears = ['2025'];
@@ -56,7 +58,7 @@ export const useAlbums = (
 
     fetchAlbums();
 
-  }, [page, limit, filters, sortMode, artistId]);
+  }, [page, limit, filters, sortMode, artistId, libraryVersion]);
 
   return { albums, total, isLoading, error, availableGenres, availableYears };
 };

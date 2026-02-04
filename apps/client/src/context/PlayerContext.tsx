@@ -27,10 +27,12 @@ interface PlayerContextType {
   isPlaying: boolean;
   queue: Track[];
   playCounts: Record<string, number>;
+  libraryVersion: number;
   playTrack: (track: Track, newQueue: Track[]) => void;
   addTracks: (addQueue: Track[]) => void;
   setTrack: (track: Track) => void;
   setTrackPlays: (trackId: string, plays: number) => void;
+  bumpLibraryVersion: () => void;
   togglePlay: () => void;
 }
 
@@ -41,6 +43,7 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   const [currentTrack, setCurrentTrack] = useLocalStorage<Track>('player-current-track', defaultTrack);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playCounts, setPlayCounts] = useState<Record<string, number>>({});
+  const [libraryVersion, setLibraryVersion] = useState(0);
 
   const playTrack = (track: Track, newQueue: Track[]) => {
     setQueue(newQueue);
@@ -68,14 +71,18 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
+  const bumpLibraryVersion = () => {
+    setLibraryVersion(prev => prev + 1);
+  };
+
   const togglePlay = () => {
     setIsPlaying(prev => !prev);
   };
 
   return (
     <PlayerContext.Provider value={{ 
-      currentTrack, isPlaying, queue, playCounts,
-      playTrack, addTracks, setTrack, setTrackPlays, togglePlay 
+      currentTrack, isPlaying, queue, playCounts, libraryVersion,
+      playTrack, addTracks, setTrack, setTrackPlays, bumpLibraryVersion, togglePlay 
     }}>
       {children}
     </PlayerContext.Provider>
