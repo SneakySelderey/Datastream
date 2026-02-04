@@ -91,6 +91,36 @@ export class ScannerService implements OnModuleInit {
     return records.map(g => ({ id: g.id }));
   }
 
+  private async pruneUnusedCovers() {
+    if (!fs.existsSync(this.coversCachePath)) return;
+
+    const trackCovers = await this.prisma.track.findMany({ select: { coverPath: true } });
+
+    const usedCovers = new Set(
+      trackCovers
+        .map(c => c.coverPath)
+        .filter((c): c is string => Boolean(c))
+    );
+
+    const files = fs.readdirSync(this.coversCachePath);
+    let removed = 0;
+
+    for (const file of files) {
+      if (!usedCovers.has(file)) {
+        try {
+          fs.unlinkSync(path.join(this.coversCachePath, file));
+          removed += 1;
+        } catch (e) {
+          this.logger.warn(`Failed to remove cover ${file}: ${e.message}`);
+        }
+      }
+    }
+
+    if (removed > 0) {
+      this.logger.log(`Removed ${removed} unused covers.`);
+    }
+  }
+
   async scanLibrary() {
     this.logger.log(`Scanning: ${this.musicPath}`);
 
@@ -248,11 +278,43 @@ export class ScannerService implements OnModuleInit {
       .map(track => track.id);
 
     if (missingIds.length > 0) {
-      await this.prisma.track.deleteMany({
-        where: { id: { in: missingIds } },
+      await this.prisma.$transaction(async (tx) => {
+        await tx.trackPlay.deleteMany({
+          where: { trackId: { in: missingIds } },
+        });
+
+        for (const id of missingIds) {
+          await tx.track.update({
+            where: { id },
+            data: {
+              playlists: { set: [] },
+              artists: { set: [] },
+              genres: { set: [] },
+            },
+          });
+        }
+
+        await tx.track.deleteMany({
+          where: { id: { in: missingIds } },
+        });
+
+        await tx.artist.deleteMany({
+          where: { tracks: { none: {} } },
+        });
+
+        await tx.album.deleteMany({
+          where: { tracks: { none: {} } },
+        });
+
+        await tx.genre.deleteMany({
+          where: { tracks: { none: {} } },
+        });
       });
+
       this.logger.log(`Removed ${missingIds.length} missing tracks.`);
     }
+
+    await this.pruneUnusedCovers();
 
     this.logger.log('Scan complete!');
   }
