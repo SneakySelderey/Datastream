@@ -102,7 +102,11 @@ export class ScannerService implements OnModuleInit {
     this.logger.log(`Found ${files.length} files.`);
     const mm = await import('music-metadata');
 
+    const scannedPaths = new Set<string>();
+
     for (const filePath of files) {
+      scannedPaths.add(filePath);
+      
       try {
         const metadata = await mm.parseFile(filePath);
         const { common, format } = metadata;
@@ -234,6 +238,22 @@ export class ScannerService implements OnModuleInit {
         this.logger.error(`Error processing ${filePath}: ${e.message}`);
       }
     }
+
+    const existingTracks = await this.prisma.track.findMany({
+      select: { id: true, filePath: true },
+    });
+
+    const missingIds = existingTracks
+      .filter(track => !scannedPaths.has(track.filePath))
+      .map(track => track.id);
+
+    if (missingIds.length > 0) {
+      await this.prisma.track.deleteMany({
+        where: { id: { in: missingIds } },
+      });
+      this.logger.log(`Removed ${missingIds.length} missing tracks.`);
+    }
+
     this.logger.log('Scan complete!');
   }
 }
