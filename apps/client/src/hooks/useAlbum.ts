@@ -42,7 +42,8 @@ export const useAlbum = (id: string, type: 'album' | 'playlist' = 'album') => {
   const albumWithPlays = useMemo(() => {
     const tracks = album?.tracks?.map(track => {
       const plays = playCounts[track.id];
-      return { ...track, plays };
+      
+      return plays === undefined ? track : { ...track, plays };
     });
 
     return { ...album, tracks };
