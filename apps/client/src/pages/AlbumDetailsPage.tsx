@@ -95,6 +95,7 @@ const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ type = 'album' }) =
         <Tracklist
           tracks={tracks}
           onPlayTrack={playTrack}
+          showAlbum={isPlaylist}
           selectedIds={selectedTrackIds}
           onSelectionChange={setSelectedTrackIds}
           playlistId={isPlaylist ? id : undefined}
