@@ -42,6 +42,55 @@ export class ScannerService implements OnModuleInit {
     return filename;
   }
 
+  private buildMetadataChecksum(metadata: {
+    title: string | null;
+    trackNumber: number | null;
+    totalNumber: number | null;
+    discNumber: number | null;
+    duration: number;
+    bitrate: number;
+    format: string;
+    date: string | null;
+    coverFilename: string | null;
+    trackArtists: string[];
+    albumArtists: string[];
+    genres: string[];
+    albumTitle: string;
+  }) {
+    return crypto
+      .createHash('md5')
+      .update(JSON.stringify(metadata))
+      .digest('hex');
+  }
+
+  private async ensureArtists(names: string[]) {
+    const records = await Promise.all(
+      names.map(name =>
+        this.prisma.artist.upsert({
+          where: { name },
+          update: {},
+          create: { name },
+        })
+      )
+    );
+
+    return records.map(a => ({ id: a.id }));
+  }
+
+  private async ensureGenres(names: string[]) {
+    const records = await Promise.all(
+      names.map(name =>
+        this.prisma.genre.upsert({
+          where: { name },
+          update: {},
+          create: { name },
+        })
+      )
+    );
+
+    return records.map(g => ({ id: g.id }));
+  }
+
   async scanLibrary() {
     this.logger.log(`Scanning: ${this.musicPath}`);
 
@@ -55,9 +104,6 @@ export class ScannerService implements OnModuleInit {
 
     for (const filePath of files) {
       try {
-        const exists = await this.prisma.track.findUnique({ where: { filePath } });
-        if (exists) continue;
-
         const metadata = await mm.parseFile(filePath);
         const { common, format } = metadata;
 
@@ -74,6 +120,27 @@ export class ScannerService implements OnModuleInit {
         else if (common.year) releaseDate = common.year.toString() + '-01-01';
 
         const coverFilename = this.saveCover(common.picture?.[0]);
+
+        const metadataChecksum = this.buildMetadataChecksum({
+          title: common.title || null,
+          trackNumber: common.track.no || null,
+          totalNumber: common.track.of || null,
+          discNumber: common.disk.no || null,
+          duration: format.duration || 0,
+          bitrate: format.bitrate || 0,
+          format: format.container || 'unknown',
+          date: releaseDate,
+          coverFilename,
+          trackArtists,
+          albumArtists,
+          genres,
+          albumTitle,
+        });
+
+        const exists = await this.prisma.track.findUnique({ where: { filePath } });
+        if (exists && exists.metadataChecksum === metadataChecksum) {
+          continue;
+        }
 
         let album = await this.prisma.album.findFirst({
           where: {
@@ -107,38 +174,61 @@ export class ScannerService implements OnModuleInit {
            });
         }
 
-        await this.prisma.track.create({
-          data: {
-            title: common.title || path.basename(filePath),
-            number: common.track.no || null,
-            totalNumber: common.track.of || null,
-            discNumber: common.disk.no || 1,
-            duration: format.duration || 0,
-            bitrate: format.bitrate || 0,
-            size: fs.statSync(filePath).size,
-            filePath: filePath,
-            fileName: path.basename(filePath),
-            coverPath: coverFilename,
-            format: format.container || 'unknown',
-            date: releaseDate,
-            
-            album: { connect: { id: album.id } },
-            
-            genres: {
-              connectOrCreate: genres.map((g) => ({
-                where: { name: g },
-                create: { name: g },
-              })),
+        const artistConnections = await this.ensureArtists(trackArtists);
+        const genreConnections = await this.ensureGenres(genres);
+
+        if (exists) {
+          await this.prisma.track.update({
+            where: { id: exists.id },
+            data: {
+              title: common.title || path.basename(filePath),
+              number: common.track.no || null,
+              totalNumber: common.track.of || null,
+              discNumber: common.disk.no || 1,
+              duration: format.duration || 0,
+              bitrate: format.bitrate || 0,
+              size: fs.statSync(filePath).size,
+              filePath: filePath,
+              fileName: path.basename(filePath),
+              coverPath: coverFilename,
+              format: format.container || 'unknown',
+              date: releaseDate,
+              metadataChecksum,
+              album: { connect: { id: album.id } },
+              genres: {
+                set: genreConnections,
+              },
+              artists: {
+                set: artistConnections,
+              },
             },
-            
-            artists: {
-              connectOrCreate: trackArtists.map((name) => ({
-                where: { name },
-                create: { name },
-              })),
+          });
+        } else {
+          await this.prisma.track.create({
+            data: {
+              title: common.title || path.basename(filePath),
+              number: common.track.no || null,
+              totalNumber: common.track.of || null,
+              discNumber: common.disk.no || 1,
+              duration: format.duration || 0,
+              bitrate: format.bitrate || 0,
+              size: fs.statSync(filePath).size,
+              filePath: filePath,
+              fileName: path.basename(filePath),
+              coverPath: coverFilename,
+              format: format.container || 'unknown',
+              date: releaseDate,
+              metadataChecksum,
+              album: { connect: { id: album.id } },
+              genres: {
+                connect: genreConnections,
+              },
+              artists: {
+                connect: artistConnections,
+              },
             },
-          },
-        });
+          });
+        }
 
       } catch (e) {
         this.logger.error(`Error processing ${filePath}: ${e.message}`);

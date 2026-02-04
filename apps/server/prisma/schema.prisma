@@ -54,6 +54,7 @@ model Track {
   filePath    String   @unique
   fileName    String
   format      String
+  metadataChecksum String?
   
   artists      Artist[]
   
