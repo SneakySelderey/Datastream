@@ -25,7 +25,6 @@ model Album {
   tracks    Track[]
   
   date      String?
-  coverPath String?
   
   createdAt DateTime @default(now())
 }

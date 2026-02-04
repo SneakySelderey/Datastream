@@ -16,7 +16,7 @@ const formatDate = (isoDate: string) => {
 };
 
 const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist }) => {
-  const coverUrl = buildCoverUrl(playlist.tracks?.[0]?.album?.coverPath);
+  const coverUrl = buildCoverUrl(playlist.tracks?.[0]?.coverPath);
 
   const trackCount = playlist.tracks?.length ?? 0;
   const totalDuration = (playlist.tracks ?? []).reduce((acc, track) => acc + track.duration, 0);

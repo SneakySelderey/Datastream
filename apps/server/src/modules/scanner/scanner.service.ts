@@ -195,17 +195,9 @@ export class ScannerService implements OnModuleInit {
                     where: { name },
                     create: { name }
                 }))
-              },
-              coverPath: coverFilename
+              }
             }
           });
-        }
-
-        else if (!album.coverPath && coverFilename) {
-           album = await this.prisma.album.update({
-             where: { id: album.id },
-             data: { coverPath: coverFilename }
-           });
         }
 
         const artistConnections = await this.ensureArtists(trackArtists);

@@ -16,7 +16,7 @@ const formatDate = (isoDate: string) => {
 };
 
 const PlaylistCard = ({ playlist, onSelect }: PlaylistCardProps) => {
-  const coverUrl = buildCoverUrl(playlist.tracks?.[0]?.album?.coverPath);
+  const coverUrl = buildCoverUrl(playlist.tracks?.[0]?.coverPath);
 
   return (
     <div

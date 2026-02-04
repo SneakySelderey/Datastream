@@ -108,7 +108,7 @@ const Player: React.FC = () => {
 
   const artistName = currentTrack.artists?.[0]?.name ?? '—';
   const albumTitle = currentTrack.album?.title ?? '—';
-  const coverUrl = buildCoverUrl(currentTrack.coverPath ?? currentTrack.album?.coverPath);
+  const coverUrl = buildCoverUrl(currentTrack.coverPath);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 p-3 bg-accent text-fg z-50 transition-colors duration-300 ease-in-out">

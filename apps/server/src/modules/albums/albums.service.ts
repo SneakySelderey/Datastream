@@ -6,11 +6,21 @@ export class AlbumsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll() {
-    return this.prisma.album.findMany({
+    const albums = await this.prisma.album.findMany({
       include: {
         artists: true,
+        tracks: {
+          select: { coverPath: true },
+          orderBy: { number: 'asc' },
+          take: 1,
+        },
       },
       orderBy: { title: 'asc' },
+    });
+
+    return albums.map(album => {
+      const coverPath = album.tracks[0]?.coverPath ?? null;
+      return { ...album, coverPath };
     });
   }
   
@@ -38,6 +48,7 @@ export class AlbumsService {
       plays: playStats?.[0]?.plays ?? 0,
     }));
 
-    return { ...album, tracks };
+    const coverPath = tracks.find(t => t.coverPath)?.coverPath ?? null;
+    return { ...album, coverPath, tracks };
   }
 }

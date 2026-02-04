@@ -8,7 +8,7 @@ interface AlbumHeaderProps {
 
 const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
   const navigate = useNavigate();
-  const coverUrl = buildCoverUrl(album.coverPath);
+  const coverUrl = buildCoverUrl(album.coverPath ?? album.tracks?.[0]?.coverPath);
 
   const trackCount = album.tracks?.length ?? 0;
   const totalDuration = (album.tracks ?? []).reduce((acc, track) => acc + track.duration, 0);

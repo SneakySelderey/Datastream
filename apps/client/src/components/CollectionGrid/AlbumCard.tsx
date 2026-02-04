@@ -6,7 +6,7 @@ interface AlbumCardProps {
 }
 
 const AlbumCard = ({ album, onSelect }: AlbumCardProps) => {
-  const coverUrl = buildCoverUrl(album.coverPath);
+  const coverUrl = buildCoverUrl(album.coverPath ?? album.tracks?.[0]?.coverPath);
 
   return (
     <div
