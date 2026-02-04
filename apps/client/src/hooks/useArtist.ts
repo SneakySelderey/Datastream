@@ -1,29 +1,22 @@
 import { useState, useEffect } from 'react';
 import { type Artist } from '../types';
 
-const mockArtistsData: Artist[] = [
-  { id: '1', name: '1000 Eyes', createdAt: new Date(0).toISOString() },
-  { id: '2', name: 'Stellar', createdAt: new Date(0).toISOString() },
-  { id: '3', name: 'Echo', createdAt: new Date(0).toISOString() },
-];
-
 export const useArtist = (artistId: string) => {
   const [artist, setArtist] = useState<Artist | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchArtist = () => {
+    const fetchArtist = async () => {
       setIsLoading(true);
+      setError(null);
 
       try {
-        const found = mockArtistsData.find(a => a.id === artistId);
-        
-        if (found) {
-          setArtist(found);
-        } else {
-          setError('Artist not found');
-        }
+        const response = await fetch(`/api/artists/${artistId}`);
+        if (!response.ok) throw new Error('Artist not found');
+
+        const data: Artist = await response.json();
+        setArtist(data);
       } catch (e) {
         setError('Cannot load artist');
         console.error(e);
@@ -32,9 +25,7 @@ export const useArtist = (artistId: string) => {
       }
     };
 
-    if (artistId) {
-      fetchArtist();
-    }
+    if (artistId) fetchArtist();
   }, [artistId]);
 
   return { artist, isLoading, error };
