@@ -43,6 +43,17 @@ const Filters: React.FC<FiltersProps> = ({
     }
   };
 
+  const allGenresLabel = t('allGenres');
+  const allYearsLabel = t('allYears');
+
+  const handleGenreSelect = (value: string) => {
+    onGenreChange(value === allGenresLabel ? '' : value);
+  };
+
+  const handleYearSelect = (value: string) => {
+    onYearChange(value === allYearsLabel ? '' : value);
+  };
+
   useEffect(() => {
     if (genre && !genres.includes(genre)) {
       onGenreChange('');
@@ -74,17 +85,17 @@ const Filters: React.FC<FiltersProps> = ({
       />
 
       <Dropdown 
-        options={genres}
+        options={[allGenresLabel, ...genres]}
         selected={genre}
         placeholder={t('allGenres')}
-        onSelect={onGenreChange}
+        onSelect={handleGenreSelect}
       />
 
       <Dropdown 
-        options={years}
+        options={[allYearsLabel, ...years]}
         selected={year}
         placeholder={t('allYears')}
-        onSelect={onYearChange}
+        onSelect={handleYearSelect}
       />
     </div>
   );

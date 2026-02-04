@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePlaylists } from '../../hooks/usePlaylists';
 import { usePlaylistActions } from '../../hooks/usePlaylistActions';
@@ -26,8 +26,27 @@ export const TracklistModal: React.FC<TracklistModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const options = useMemo(() => {
-    return playlists.map(p => p.title);
+    return [...playlists]
+      .map(p => p.title);
   }, [playlists]);
+
+  const hasPlaylists = options.length > 0;
+
+  useEffect(() => {
+    if (!hasPlaylists && mode === 'select') {
+      setMode('create');
+      setSelectedTitle('');
+      return;
+    }
+
+    if (hasPlaylists && mode === 'create') {
+      setMode('select');
+    }
+
+    if (mode === 'select' && !selectedTitle && options.length > 0) {
+      setSelectedTitle(options[0]);
+    }
+  }, [mode, selectedTitle, options, hasPlaylists]);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -70,7 +89,8 @@ export const TracklistModal: React.FC<TracklistModalProps> = ({
         <div className="flex gap-4 text-sm border-b border-fg/10 pb-2">
           <button 
             onClick={() => setMode('select')}
-            className={`pb-1 ${mode === 'select' ? 'border-b-2 border-primary font-bold' : 'opacity-50'}`}
+            disabled={!hasPlaylists}
+            className={`pb-1 ${mode === 'select' ? 'border-b-2 border-primary font-bold' : 'opacity-50'} ${!hasPlaylists ? 'cursor-not-allowed opacity-50' : ''}`}
           >
             {t('selectExisting')}
           </button>

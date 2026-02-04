@@ -11,9 +11,12 @@ const languages = [
   { code: 'ru', label: 'Русский' },
 ];
 
+const sortedLanguages = [...languages].sort((a, b) => a.label.localeCompare(b.label));
+const defaultLanguage = 'en';
+
 const AccountPage: React.FC = () => {
   const { i18n, t } = useTranslation();
-  const [savedLang, setSavedLang] = useLocalStorage<string>('app-lang', 'en');
+  const [savedLang, setSavedLang] = useLocalStorage<string>('app-lang', defaultLanguage);
   const { logout, user, updateUser } = useAuth();
 
   useEffect(() => {
@@ -22,10 +25,11 @@ const AccountPage: React.FC = () => {
     }
   }, [savedLang, i18n]);
 
-  const currentLang = languages.find(l => l.code === savedLang) || languages[0];
+  const currentLang =
+    sortedLanguages.find(l => l.code === savedLang)
 
   const handleSelect = (str: string) => {
-    const lang = languages.find(l => l.label === str);
+    const lang = sortedLanguages.find(l => l.label === str);
     if (lang) {
       setSavedLang(lang.code);
     }
@@ -95,8 +99,8 @@ const AccountPage: React.FC = () => {
           <p>{t('language')}</p>
 
           <Dropdown
-            options={languages.map(lang => lang.label)}
-            selected={currentLang.label}
+            options={sortedLanguages.map(lang => lang.label)}
+            selected={currentLang?.label ?? 'English'}
             onSelect={handleSelect}
           />
         </div>
