@@ -92,8 +92,8 @@ const TracksPage = () => {
         onOrderChange={handleOrderChange}
       />
 
-      {!isLoading && !error && (
-        <div className="mt-5">
+      {!error && tracks.length > 0 && (
+        <div className={`mt-5 transition-opacity duration-200 ${isLoading ? 'opacity-60' : 'opacity-100'}`}>
           <Tracklist
             tracks={tracks} 
             onPlayTrack={playTrack}
