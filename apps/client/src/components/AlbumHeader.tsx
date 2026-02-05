@@ -14,6 +14,14 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
   const totalDuration = (album.tracks ?? []).reduce((acc, track) => acc + track.duration, 0);
   const totalSize = (album.tracks ?? []).reduce((acc, track) => acc + track.size, 0);
 
+  const trackDates = (album.tracks ?? [])
+    .map((track) => track.date)
+    .filter((date): date is string => Boolean(date));
+  const uniqueDates = Array.from(new Set(trackDates));
+  const shouldShowFullDate = uniqueDates.length === 1;
+  const albumYear = (album.date ?? uniqueDates[0] ?? '').match(/^\d{4}/)?.[0];
+  const displayDate = shouldShowFullDate ? uniqueDates[0] : albumYear ?? '—';
+
   const genreMap = new Map<string, { id: string; name: string }>();
   (album.tracks ?? []).forEach((track) => {
     (track.genres ?? []).forEach((genre) => {
@@ -61,7 +69,7 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
         </h2>
 
         <p>
-          {album.date ?? '—'} &bull; {trackCount} Songs &bull; {formatTime(totalDuration)} &bull; {formatFileSize(totalSize)}
+          {displayDate} &bull; {trackCount} Songs &bull; {formatTime(totalDuration)} &bull; {formatFileSize(totalSize)}
         </p>
 
         {uniqueGenres.length > 0 && (

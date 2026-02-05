@@ -65,6 +65,14 @@ export class ScannerService implements OnModuleInit {
       .digest('hex');
   }
 
+  private extractYear(value: string | number | null): string | null {
+    if (value === null || value === undefined) return null;
+
+    const raw = String(value).trim();
+    const match = raw.match(/\b(\d{4})\b/);
+    return match ? match[1] : null;
+  }
+
   private async ensureArtists(names: string[]) {
     const records = await Promise.all(
       names.map(name =>
@@ -207,6 +215,9 @@ export class ScannerService implements OnModuleInit {
         if (common.date) releaseDate = common.date;
         else if (common.year) releaseDate = common.year.toString() + '-01-01';
 
+        const albumYear = this.extractYear(common.date ?? common.year ?? releaseDate);
+        const albumDate = albumYear ?? releaseDate;
+
         const coverFilename = this.saveCover(common.picture?.[0]);
 
         const metadataChecksum = this.buildMetadataChecksum({
@@ -235,18 +246,19 @@ export class ScannerService implements OnModuleInit {
         let album = await this.prisma.album.findFirst({
           where: {
             title: albumTitle,
-            ...(releaseDate ? { date: releaseDate } : {}),
-            artists: { 
-              some: { name: { in: albumArtists } } 
-            }
-          }
+            ...(albumYear
+              ? {
+                  date: albumYear,
+                }
+              : { date: null }),
+          },
         });
 
         if (!album) {
           album = await this.prisma.album.create({
             data: {
               title: albumTitle,
-              date: releaseDate,
+              date: albumDate,
               artists: {
                 connectOrCreate: albumArtists.map(name => ({
                     where: { name },

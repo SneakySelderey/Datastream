@@ -7,6 +7,7 @@ interface AlbumCardProps {
 
 const AlbumCard = ({ album, onSelect }: AlbumCardProps) => {
   const coverUrl = buildCoverUrl(album.coverPath ?? album.tracks?.[0]?.coverPath);
+  const albumYear = album.date?.match(/^\d{4}/)?.[0];
 
   return (
     <div
@@ -22,7 +23,7 @@ const AlbumCard = ({ album, onSelect }: AlbumCardProps) => {
       </div>
       <h3 className="mt-1 truncate">{album.title}</h3>
       <p className="text-sm text-fg">
-        {(album.artists ?? []).map(artist => artist.name).join(', ') || '—'} &bull; {album.date ?? '—'}
+        {(album.artists ?? []).map(artist => artist.name).join(', ') || '—'} &bull; {albumYear ?? '—'}
       </p>
     </div>
   );
