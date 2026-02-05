@@ -59,13 +59,15 @@ const PlaylistsPage = () => {
         />
       </div>
 
-      {!isLoading && !error && (
-        <CollectionGrid
-          items={playlists}
-          renderItem={(playlist) => (
-            <PlaylistCard playlist={playlist} onSelect={handleSelectPlaylist} />
-          )}
-        />
+      {!error && playlists.length > 0 && (
+        <div className={`transition-opacity duration-200 ${isLoading ? 'opacity-60' : 'opacity-100'}`}>
+          <CollectionGrid
+            items={playlists}
+            renderItem={(playlist) => (
+              <PlaylistCard playlist={playlist} onSelect={handleSelectPlaylist} />
+            )}
+          />
+        </div>
       )}
 
       <PaginationControls 

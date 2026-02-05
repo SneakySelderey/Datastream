@@ -61,8 +61,8 @@ const ArtistsPage = () => {
         />
       </div>
 
-      {!isLoading && !error && (
-        <div className="mt-5">
+      {!error && artists.length > 0 && (
+        <div className={`mt-5 transition-opacity duration-200 ${isLoading ? 'opacity-60' : 'opacity-100'}`}>
           <ArtistList
             artists={artists} 
             onSelectArtist={handleSelectArtist}

@@ -56,13 +56,15 @@ const ArtistDetailsPage = () => {
 
       {error && <p>{error}</p>}
 
-      {!isLoading && !error && albums.length > 0 && (
-        <CollectionGrid
-          items={albums}
-          renderItem={(album) => (
-            <AlbumCard album={album} onSelect={handleSelectAlbum} />
-          )}
-        />
+      {!error && albums.length > 0 && (
+        <div className={`transition-opacity duration-200 ${isLoading ? 'opacity-60' : 'opacity-100'}`}>
+          <CollectionGrid
+            items={albums}
+            renderItem={(album) => (
+              <AlbumCard album={album} onSelect={handleSelectAlbum} />
+            )}
+          />
+        </div>
       )}
       
       {!isLoading && !error && albums.length === 0 && (
