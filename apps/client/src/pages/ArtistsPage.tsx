@@ -8,7 +8,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import ArtistList from '../components/ArtistList';
 import PaginationControls from '../components/PaginationControls';
 
-import { type ArtistListItem, type SortMode } from '../types';
+import { type ArtistListItem, type OrderMode } from '../types';
 
 const ArtistsPage = () => {
   const { t } = useTranslation();
@@ -21,17 +21,17 @@ const ArtistsPage = () => {
 
   const [search, setSearch] = useState(searchParams.get('search') || '');
 
-  const sortMode = (searchParams.get('sort') as SortMode) || 'default';
+  const orderMode = (searchParams.get('order') as OrderMode) || 'default';
   
-  const { artists, total, isLoading, error } = useArtists(currentPage, itemsPerPage, search, sortMode);
+  const { artists, total, isLoading, error } = useArtists(currentPage, itemsPerPage, search, orderMode);
 
   useEffect(() => {
     const params: Record<string, string> = {};
-    if (sortMode && sortMode !== 'default') params.sort = sortMode;
+    if (orderMode && orderMode !== 'default') params.order = orderMode;
     if (search) params.search = search;
     
     setSearchParams(params, { replace: true });
-  }, [search, sortMode, setSearchParams]);
+  }, [search, orderMode, setSearchParams]);
 
   const handleSearchChange = (val: string) => {
     setSearch(val);

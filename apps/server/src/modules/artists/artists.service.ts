@@ -10,7 +10,7 @@ export class ArtistsService {
     page: number, 
     limit: number, 
     search?: string, 
-    sort?: string
+    order?: string
   ) {
     const skip = (page - 1) * limit;
     const where: Prisma.ArtistWhereInput = {};
@@ -21,9 +21,9 @@ export class ArtistsService {
 
     let orderBy: Prisma.ArtistOrderByWithRelationInput = { name: 'asc' };
 
-    if (sort === 'recently-added') {
+    if (order === 'recently-added') {
       orderBy = { createdAt: 'desc' };
-    } else if (sort === 'random') {
+    } else if (order === 'random') {
       orderBy = { id: 'asc' }; 
     }
 

@@ -87,7 +87,7 @@ export interface FilterState {
   year: string;
 }
 
-export type SortMode = 'default' | 'random' | 'recently-added' | 'recently-played' | 'most-played';
+export type OrderMode = 'default' | 'random' | 'recently-added' | 'recently-played' | 'most-played';
 
 export const formatTime = (timeInSeconds: number): string => {
   if (!timeInSeconds || isNaN(timeInSeconds)) return '0:00';

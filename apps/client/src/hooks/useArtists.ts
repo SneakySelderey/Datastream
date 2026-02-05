@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { type ArtistListItem, type SortMode } from '../types';
+import { type ArtistListItem, type OrderMode } from '../types';
 import { usePlayer } from '../context/PlayerContext';
 
 interface ApiArtistResponse {
@@ -11,7 +11,7 @@ export const useArtists = (
   page: number, 
   limit: number, 
   search: string, 
-  sortMode: SortMode = 'default'
+  orderMode: OrderMode = 'default'
 ) => {
   const [artists, setArtists] = useState<ArtistListItem[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -28,7 +28,7 @@ export const useArtists = (
         const params = new URLSearchParams({
           page: page.toString(),
           limit: limit.toString(),
-          sort: sortMode,
+          order: orderMode,
         });
 
         if (search) params.append('search', search);
@@ -52,7 +52,7 @@ export const useArtists = (
 
     fetchArtists();
 
-  }, [page, limit, search, sortMode, libraryVersion]);
+  }, [page, limit, search, orderMode, libraryVersion]);
 
   return { artists, total, isLoading, error };
 };

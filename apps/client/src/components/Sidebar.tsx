@@ -30,35 +30,35 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
         </div>
 
         <div className='flex-column pl-5'>
-          <Link to='/albums?sort=name' className={itemClasses}>
+          <Link to='/albums?order=name' className={itemClasses}>
             <AlbumsIcon className="w-6 h-6 stroke-current fill-current" />
             <span>{t('all')}</span>
           </Link>
         </div>
 
         <div className='flex-column pl-5'>
-          <Link to='/albums?sort=random' className={itemClasses}>
+          <Link to='/albums?order=random' className={itemClasses}>
             <RandomAlbums className="w-6 h-6 stroke-current fill-current" />
             <span>{t('random')}</span>
           </Link>
         </div>
 
         <div className='flex-column pl-4'>
-          <Link to='/albums?sort=recently-added' className={itemClasses}>
+          <Link to='/albums?order=recently-added' className={itemClasses}>
             <RecentlyAdded className="w-8 h-8 mr-2 stroke-current fill-current" />
             <span>{t('recently_added')}</span>
           </Link>
         </div>
 
         <div className='flex-column pl-5'>
-          <Link to='/albums?sort=recently-played' className={itemClasses}>
+          <Link to='/albums?order=recently-played' className={itemClasses}>
             <RecentlyPlayed className="w-6 h-6 stroke-current fill-current" />
             <span>{t('recently_played')}</span>
           </Link>
         </div>
 
         <div className='flex-column pl-5'>
-          <Link to='/albums?sort=most-played' className={itemClasses}>
+          <Link to='/albums?order=most-played' className={itemClasses}>
             <MostPlayed className="w-6 h-6 stroke-current fill-current" />
             <span>{t('most_played')}</span>
           </Link>

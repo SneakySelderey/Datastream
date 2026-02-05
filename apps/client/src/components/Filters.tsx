@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import Dropdown from './Dropdown';
 
-import { type SortMode } from '../types';
+import { type OrderMode } from '../types';
 
 interface FiltersProps {
   search: string;
@@ -11,18 +11,18 @@ interface FiltersProps {
   year: string;
   genres: string[];
   years: string[];
-  sortMode: SortMode;
+  orderMode: OrderMode;
   onSearchChange: (value: string) => void;
   onGenreChange: (value: string) => void;
   onYearChange: (value: string) => void;
-  onSortChange: (value: string) => void;
+  onOrderChange: (value: string) => void;
 }
 
 const Filters: React.FC<FiltersProps> = ({
   search, genre, year,
-  genres, years, sortMode,
+  genres, years, orderMode,
   onSearchChange, onGenreChange,
-  onYearChange, onSortChange
+  onYearChange, onOrderChange
 }) => {
   const { t } = useTranslation();
 
@@ -34,12 +34,12 @@ const Filters: React.FC<FiltersProps> = ({
     { value: 'most-played', label: t('sortPopular') },
   ];
 
-  const currentSort = sortOptions.find(opt => opt.value === sortMode) || sortOptions[0];
+  const currentSort = sortOptions.find(opt => opt.value === orderMode) || sortOptions[0];
 
   const handleSortSelect = (str: string) => {
     const option = sortOptions.find(opt => opt.label === str);
     if (option) {
-      onSortChange(option.value);
+      onOrderChange(option.value);
     }
   };
 

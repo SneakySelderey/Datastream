@@ -13,7 +13,7 @@ export class TracksService {
     search?: string,
     genre?: string,
     year?: string,
-    sort?: string,
+    order?: string,
   ) {
     const skip = (page - 1) * limit;
 
@@ -36,9 +36,9 @@ export class TracksService {
 
     let orderBy: Prisma.TrackOrderByWithRelationInput = { title: 'asc' };
 
-    if (sort === 'recently-added') {
+    if (order === 'recently-added') {
       orderBy = { createdAt: 'desc' };
-    } else if (sort === 'random') {
+    } else if (order === 'random') {
       orderBy = { id: 'asc' }; 
     }
 

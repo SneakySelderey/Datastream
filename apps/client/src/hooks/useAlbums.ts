@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { type Album, type FilterState, type SortMode } from '../types';
+import { type Album, type FilterState, type OrderMode } from '../types';
 import { usePlayer } from '../context/PlayerContext';
 
 const DEFAULT_FILTERS: FilterState = {
@@ -12,7 +12,7 @@ const DEFAULT_FILTERS: FilterState = {
 // @ts-ignore
 export const useAlbums = (
   page: number,limit: number, filters: FilterState = DEFAULT_FILTERS,
-  sortMode: SortMode = 'default', artistId: string = ''
+  orderMode: OrderMode = 'default', artistId: string = ''
 ) => {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -34,7 +34,7 @@ export const useAlbums = (
             genre: filters.genre || '',
             year: filters.year || '',
             artistId: artistId || '',
-            sort: sortMode
+            order: orderMode
         });
 
         const response = await fetch(`/api/albums?${params}`);
@@ -59,7 +59,7 @@ export const useAlbums = (
 
     fetchAlbums();
 
-  }, [page, limit, filters, sortMode, artistId, libraryVersion]);
+  }, [page, limit, filters, orderMode, artistId, libraryVersion]);
 
   return { albums, total, isLoading, error, availableGenres, availableYears };
 };

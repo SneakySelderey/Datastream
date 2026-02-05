@@ -10,7 +10,7 @@ import Tracklist from '../components/Tracklist/Tracklist';
 import PaginationControls from '../components/PaginationControls';
 import Filters from '../components/Filters';
 
-import { type FilterState, type SortMode } from '../types';
+import { type FilterState, type OrderMode } from '../types';
 
 const TracksPage = () => {
   const { t } = useTranslation();
@@ -27,27 +27,27 @@ const TracksPage = () => {
     year: searchParams.get('year') || '',
   });
 
-  const sortMode = (searchParams.get('sort') as SortMode) || 'default';
+  const orderMode = (searchParams.get('order') as OrderMode) || 'default';
   
-  const { tracks, total, isLoading, error, availableGenres, availableYears } = useTracks(currentPage, itemsPerPage, filters, sortMode);
+  const { tracks, total, isLoading, error, availableGenres, availableYears } = useTracks(currentPage, itemsPerPage, filters, orderMode);
 
   const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>([]);
 
   useEffect(() => {
     const params: Record<string, string> = {};
-    if (sortMode && sortMode !== 'default') params.sort = sortMode;
+    if (orderMode && orderMode !== 'default') params.order = orderMode;
 
     if (filters.genre) params.genre = filters.genre;
     if (filters.search) params.search = filters.search;
     if (filters.year) params.year = filters.year;
     
     setSearchParams(params, { replace: true });
-  }, [filters, sortMode, setSearchParams]);
+  }, [filters, orderMode, setSearchParams]);
 
-  const handleSortChange = (newSort: string) => {
+  const handleOrderChange = (newOrder: string) => {
     setSearchParams(prev => {
       const newParams = new URLSearchParams(prev);
-      newParams.set('sort', newSort);
+      newParams.set('order', newOrder);
       return newParams;
     });
     setCurrentPage(1);
@@ -85,11 +85,11 @@ const TracksPage = () => {
         year={filters.year}
         genres={availableGenres}
         years={availableYears}
-        sortMode={sortMode}
+        orderMode={orderMode}
         onSearchChange={handleSearchChange}
         onGenreChange={handleGenreChange}
         onYearChange={handleYearChange}
-        onSortChange={handleSortChange}
+        onOrderChange={handleOrderChange}
       />
 
       {!isLoading && !error && (

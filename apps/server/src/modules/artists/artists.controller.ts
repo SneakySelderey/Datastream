@@ -10,9 +10,9 @@ export class ArtistsController {
     @Query('page') page = 1,
     @Query('limit') limit = 18,
     @Query('search') search = '',
-    @Query('sort') sort = 'default',
+    @Query('order') order = 'default',
   ) {
-    return this.artistsService.findAll(+page, +limit, search, sort);
+    return this.artistsService.findAll(+page, +limit, search, order);
   }
 
   @Get(':id')

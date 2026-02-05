@@ -13,7 +13,7 @@ export class AlbumsService {
     genre?: string,
     year?: string,
     artistId?: string,
-    sort?: string,
+    order?: string,
   ) {
     const skip = (page - 1) * limit;
 
@@ -40,13 +40,13 @@ export class AlbumsService {
 
     let orderBy: any = { title: 'asc' };
 
-    if (sort === 'recently-added') {
+    if (order === 'recently-added') {
       orderBy = { createdAt: 'desc' };
-    } else if (sort === 'random') {
+    } else if (order === 'random') {
       orderBy = { id: 'asc' };
     }
 
-    if (sort === 'most-played') {
+    if (order === 'most-played') {
       const albums = await this.prisma.album.findMany({
         where,
         include: {

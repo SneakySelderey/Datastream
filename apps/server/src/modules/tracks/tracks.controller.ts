@@ -19,9 +19,9 @@ export class TracksController {
     @Query('search') search = '',
     @Query('genre') genre = '',
     @Query('year') year = '',
-    @Query('sort') sort = 'default',
+    @Query('order') order = 'default',
   ) {
-    return this.tracksService.findAll(req.user.id, +page, +limit, search, genre, year, sort);
+    return this.tracksService.findAll(req.user.id, +page, +limit, search, genre, year, order);
   }
 
   @Get(':id')

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { type Track, type FilterState, type SortMode } from '../types';
+import { type Track, type FilterState, type OrderMode } from '../types';
 import { usePlayer } from '../context/PlayerContext';
 
 interface TracksResponse {
@@ -11,7 +11,7 @@ interface TracksResponse {
   }
 } 
 
-export const useTracks = (page: number, limit: number, filters: FilterState, sortMode: SortMode = 'default') => {
+export const useTracks = (page: number, limit: number, filters: FilterState, orderMode: OrderMode = 'default') => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -30,7 +30,7 @@ export const useTracks = (page: number, limit: number, filters: FilterState, sor
         const params = new URLSearchParams({
           page: page.toString(),
           limit: limit.toString(),
-          sort: sortMode,
+          order: orderMode,
         });
 
         if (filters.search) params.append('search', filters.search);
@@ -58,7 +58,7 @@ export const useTracks = (page: number, limit: number, filters: FilterState, sor
 
     fetchTracks();
 
-  }, [page, limit, filters, sortMode, libraryVersion]);
+  }, [page, limit, filters, orderMode, libraryVersion]);
 
   const tracksWithPlays = useMemo(
     () => tracks.map(track => {

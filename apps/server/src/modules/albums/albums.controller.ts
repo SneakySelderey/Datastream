@@ -20,9 +20,9 @@ export class AlbumsController {
     @Query('genre') genre = '',
     @Query('year') year = '',
     @Query('artistId') artistId = '',
-    @Query('sort') sort = 'default',
+    @Query('order') order = 'default',
   ) {
-    return this.albumsService.findAll(req.user.id, +page, +limit, search, genre, year, artistId, sort);
+    return this.albumsService.findAll(req.user.id, +page, +limit, search, genre, year, artistId, order);
   }
 
   @Get(':id')
