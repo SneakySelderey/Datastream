@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 
 import { TracklistModal } from './TracklistModal';
 import { usePlaylistActions } from '../../hooks/usePlaylistActions';
+import { usePlayer } from '../../context/PlayerContext';
+
+import MenuIcon from '../../assets/dots-vertical.svg?react';
 
 import { type Track, formatTime } from '../../types';
 
@@ -28,9 +31,11 @@ const Tracklist: React.FC<TracklistProps> = ({
 }) => {
   const { t } = useTranslation();
   const { removeTracksFromPlaylist } = usePlaylistActions();
+  const { addTracks, addTracksNext } = usePlayer();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [menuTrackId, setMenuTrackId] = useState<string | null>(null);
 
   const desktopGridClass = showAlbum
     ? 'md:grid-cols-[auto_auto_minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_minmax(0,1fr)_auto]'
@@ -75,6 +80,22 @@ const Tracklist: React.FC<TracklistProps> = ({
     } finally {
       setIsRemoving(false);
     }
+  };
+
+  const handleMenuBlur = (event: React.FocusEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+      setMenuTrackId(null);
+    }
+  };
+
+  const handleAddToQueue = (track: Track) => {
+    addTracks([track]);
+    setMenuTrackId(null);
+  };
+
+  const handlePlayNext = (track: Track) => {
+    addTracksNext([track]);
+    setMenuTrackId(null);
   };
 
   return (
@@ -207,7 +228,44 @@ const Tracklist: React.FC<TracklistProps> = ({
               <p className="hidden md:block">{track.format}</p>
               <p className="hidden md:block">{(track.size / 1048576).toFixed(2)} MB</p>
               <p className="hidden md:block">{track.genres?.map(g => g.name)[0] ?? '—'}</p>
-              <div className="hidden md:flex justify-center">...</div>
+              <div
+                className="hidden md:flex justify-center relative"
+                tabIndex={-1}
+                onBlur={handleMenuBlur}
+              >
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setMenuTrackId(prev => (prev === track.id ? null : track.id));
+                  }}
+                  className="p-1 rounded-md hover:bg-fg/10 transition-colors"
+                  aria-label={t('playQueue')}
+                >
+                  <MenuIcon className="w-4 h-4 cursor-pointer fill-current" />
+                </button>
+                {menuTrackId === track.id && (
+                  <div
+                    className="absolute right-0 top-full mt-2 w-44 bg-bg border border-fg/20 rounded-lg shadow-lg z-50"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleAddToQueue(track)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-fg/10 rounded-t-lg"
+                    >
+                      {t('addPlayQueue')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePlayNext(track)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-fg/10 rounded-b-lg"
+                    >
+                      {t('playNext')}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )
         })}

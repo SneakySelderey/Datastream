@@ -30,6 +30,7 @@ interface PlayerContextType {
   libraryVersion: number;
   playTrack: (track: Track, newQueue: Track[]) => void;
   addTracks: (addQueue: Track[]) => void;
+  addTracksNext: (addQueue: Track[]) => void;
   setTrack: (track: Track) => void;
   setTrackPlays: (trackId: string, plays: number) => void;
   bumpLibraryVersion: () => void;
@@ -52,11 +53,20 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addTracks = (addQueue: Track[]) => {
-    for (const track of addQueue) {
-      if (!queue.find(t => t.id === track.id)) {
-        setQueue(prev => [...prev, track]);
-      }
-    }
+    setQueue(prev => [...prev, ...addQueue]);
+  };
+
+  const addTracksNext = (addQueue: Track[]) => {
+    setQueue(prev => {
+      const currentIndex = prev.findIndex(track => track.id === currentTrack.id);
+      const insertIndex = currentIndex >= 0 ? currentIndex + 1 : prev.length;
+
+      return [
+        ...prev.slice(0, insertIndex),
+        ...addQueue,
+        ...prev.slice(insertIndex),
+      ];
+    });
   };
 
   const setTrack = (track: Track) => {
@@ -82,7 +92,7 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   return (
     <PlayerContext.Provider value={{ 
       currentTrack, isPlaying, queue, playCounts, libraryVersion,
-      playTrack, addTracks, setTrack, setTrackPlays, bumpLibraryVersion, togglePlay 
+      playTrack, addTracks, addTracksNext, setTrack, setTrackPlays, bumpLibraryVersion, togglePlay 
     }}>
       {children}
     </PlayerContext.Provider>
