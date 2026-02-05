@@ -34,6 +34,13 @@ export class TracksService {
       where.date = { contains: year };
     }
 
+    const include: Prisma.TrackInclude = {
+      album: true,
+      artists: true,
+      genres: true,
+      playStats: { where: { userId } },
+    };
+
     let orderBy: Prisma.TrackOrderByWithRelationInput = { title: 'asc' };
 
     if (order === 'recently-added') {
@@ -42,12 +49,44 @@ export class TracksService {
       orderBy = { id: 'asc' }; 
     }
 
-    const include: Prisma.TrackInclude = {
-      album: true,
-      artists: true,
-      genres: true,
-      playStats: { where: { userId } },
-    };
+    if (order === 'most-played') {
+      const tracks = await this.prisma.track.findMany({
+        where,
+        include,
+      });
+
+      const sorted = tracks
+        .map(({ playStats, ...rest }) => ({
+          ...rest,
+          plays: playStats?.[0]?.plays ?? 0,
+        }))
+        .sort(
+          (a, b) =>
+            b.plays - a.plays || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }),
+        );
+
+      const data = sorted.slice(skip, skip + Number(limit));
+
+      const allGenres = await this.prisma.genre.findMany({ select: { name: true } });
+      const allTracksDates = await this.prisma.track.findMany({
+        select: { date: true },
+        distinct: ['date'],
+        where: { date: { not: null } },
+      });
+
+      const uniqueYears = [...new Set(
+        allTracksDates.map(t => t.date?.substring(0, 4)).filter(Boolean)
+      )].sort().reverse();
+
+      return {
+        data,
+        total: sorted.length,
+        meta: {
+          genres: allGenres.map(g => g.name),
+          years: uniqueYears,
+        },
+      };
+    }
 
     const [tracks, total] = await Promise.all([
       this.prisma.track.findMany({
