@@ -41,6 +41,7 @@ const AccountPage: React.FC = () => {
 
   const [newNickname, setNewNickname] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleNicknameSave = async () => {
     if (!user || !newNickname.trim()) return;
@@ -88,6 +89,34 @@ const AccountPage: React.FC = () => {
       setNewPassword('');
     } catch (err) {
       console.error('Password update failed', err);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user || isDeleting) return;
+
+    const confirmed = window.confirm('Delete your account? This cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      const response = await fetch('/api/auth/me', {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to delete account');
+      }
+
+      await logout();
+    } catch (err) {
+      const message = (err as Error).message || 'Failed to delete account';
+      alert(message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -143,11 +172,21 @@ const AccountPage: React.FC = () => {
           </button>
         </div>
 
-        <button
-        onClick={handleLogout}
-        className='mt-5 px-6 py-2 text-red-500 border rounded-lg hover:bg-red-500/10 cursor-pointer'>
+        <div className='mt-5 flex flex-wrap gap-3'>
+          <button
+            onClick={handleLogout}
+            className='px-6 py-2 text-red-500 border rounded-lg hover:bg-red-500/10 cursor-pointer'
+          >
             {t('logout')}
-        </button>
+          </button>
+          <button
+            onClick={handleDeleteAccount}
+            disabled={isDeleting}
+            className='px-6 py-2 text-red-500 border rounded-lg hover:bg-red-500/10 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed'
+          >
+            {isDeleting ? 'Deleting…' : 'Delete user'}
+          </button>
+        </div>
       </div>
     </div>
   );
