@@ -8,7 +8,7 @@ import { usePlayer } from '../../context/PlayerContext';
 
 import MenuIcon from '../../assets/dots-vertical.svg?react';
 
-import { type Track, formatTime } from '../../types';
+import { type Track, formatTime, formatFileSize } from '../../types';
 
 interface TracklistProps {
   tracks: Track[];
@@ -232,7 +232,7 @@ const Tracklist: React.FC<TracklistProps> = ({
               <p>{formatTime(track.duration)}</p>
               <p className="hidden md:block">{track.plays}</p>
               <p className="hidden md:block">{track.format}</p>
-              <p className="hidden md:block">{(track.size / 1048576).toFixed(2)} MB</p>
+              <p className="hidden md:block">{formatFileSize(track.size)}</p>
               <p className="hidden md:block">{track.genres?.map(g => g.name)[0] ?? '—'}</p>
               <div
                 className="hidden md:flex justify-center relative"

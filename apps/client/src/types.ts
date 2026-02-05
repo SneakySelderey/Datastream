@@ -92,10 +92,29 @@ export type OrderMode = 'default' | 'random' | 'recently-added' | 'recently-play
 export const formatTime = (timeInSeconds: number): string => {
   if (!timeInSeconds || isNaN(timeInSeconds)) return '0:00';
 
-  const minutes = Math.floor(timeInSeconds / 60);
-  const seconds = Math.floor(timeInSeconds % 60);
+  const totalSeconds = Math.floor(timeInSeconds);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
 
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
+
+export const formatFileSize = (bytes: number): string => {
+  if (!bytes || isNaN(bytes)) return '0 MB';
+
+  const gb = 1024 ** 3;
+  const mb = 1024 ** 2;
+
+  if (bytes >= gb) {
+    return `${(bytes / gb).toFixed(2)} GB`;
+  }
+
+  return `${(bytes / mb).toFixed(2)} MB`;
 };
 
 export const buildCoverUrl = (coverPath?: string | null): string | null => {

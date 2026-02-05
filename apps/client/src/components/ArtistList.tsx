@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { type ArtistListItem } from '../types';
+import { type ArtistListItem, formatFileSize } from '../types';
 
 interface ArtistListProps {
   artists: ArtistListItem[];
@@ -42,7 +42,7 @@ const ArtistList: React.FC<ArtistListProps> = ({ artists, onSelectArtist }) => {
           
           <p className="text-center text-fg/80">{artist.albumCount}</p>
           <p className="text-center text-fg/80">{artist.songCount}</p>
-          <p className="hidden md:block text-fg/80">{(artist.size / 1048576).toFixed(2) } MB</p>
+          <p className="hidden md:block text-fg/80">{formatFileSize(artist.size)}</p>
           <p className="hidden md:block text-fg/80">{artist.plays}</p>
           
           <div className="hidden md:flex justify-center text-fg/50">...</div>

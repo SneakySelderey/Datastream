@@ -1,5 +1,5 @@
 import React from 'react';
-import { type Playlist, buildCoverUrl, formatTime } from '../types';
+import { type Playlist, buildCoverUrl, formatTime, formatFileSize } from '../types';
 
 interface PlaylistHeaderProps {
   playlist: Playlist;
@@ -32,7 +32,7 @@ const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({ playlist }) => {
       <div className="flex flex-col pt-2 gap-1">
         <h1 className="text-2xl">{playlist.title}</h1>
         <p>
-          {formatDate(playlist.updatedAt)} &bull; {trackCount} Songs &bull; {formatTime(totalDuration)} &bull; {(totalSize / 1048576).toFixed(2)} MB
+          {formatDate(playlist.updatedAt)} &bull; {trackCount} Songs &bull; {formatTime(totalDuration)} &bull; {formatFileSize(totalSize)}
         </p>
       </div>
     </div>
