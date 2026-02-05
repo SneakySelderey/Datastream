@@ -75,7 +75,7 @@ const TracksPage = () => {
 
   return (
     <div className='m-5 animate-fade-in-soft'>    
-      {isLoading && <p>{t('loading')}</p>}
+      {isLoading && <p className="text-fg/50 text-sm">{t('loading')}</p>}
 
       {error && <p>{error}</p>}
 
