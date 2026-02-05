@@ -45,7 +45,7 @@ const ArtistDetailsPage = () => {
   };
 
   return (
-    <div className='m-5 animate-fade-in-soft'>
+    <div className='m-5'>
       <div className="mb-8">
         {isArtistLoading && <p className="text-fg/50 text-sm">{t('loading')}</p>}
         

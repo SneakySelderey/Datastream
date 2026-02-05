@@ -62,7 +62,7 @@ const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ type = 'album' }) =
   };
 
   return (
-    <div className='p-8 animate-fade-in-soft'>
+    <div className='p-8'>
       {isPlaylist ? (
         <PlaylistHeader playlist={album as Playlist} />
       ) : (

@@ -71,22 +71,24 @@ function AppContent() {
             ${user && !isAuthPage ? 'pt-12 pb-24' : ''} 
             ${user && !isAuthPage && isSidebarOpen ? 'md:ml-55' : ''}`}
         >
-          <Routes>
-            <Route path="/login" element={<PublicRoute><AuthPage mode="login" /></PublicRoute>} />
-            <Route path="/register" element={<PublicRoute><AuthPage mode="register" /></PublicRoute>} />
+          <div key={location.pathname} className="animate-fade-in-soft">
+            <Routes>
+              <Route path="/login" element={<PublicRoute><AuthPage mode="login" /></PublicRoute>} />
+              <Route path="/register" element={<PublicRoute><AuthPage mode="register" /></PublicRoute>} />
 
-            <Route path="/" element={<ProtectedRoute><Navigate to="/albums" replace /></ProtectedRoute>} />
-            <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
-            <Route path="/albums" element={<ProtectedRoute><AlbumsPage /></ProtectedRoute>} />
-            <Route path="/albums/:id" element={<ProtectedRoute><AlbumDetailsPages /></ProtectedRoute>} />
-            <Route path="/artists" element={<ProtectedRoute><ArtistsPage /></ProtectedRoute>} />
-            <Route path="/artists/:id" element={<ProtectedRoute><ArtistDetailsPage /></ProtectedRoute>} />
-            <Route path="/songs" element={<ProtectedRoute><TracksPage /></ProtectedRoute>} />
-            <Route path="/playlists" element={<ProtectedRoute><PlaylistsPage /></ProtectedRoute>} />
-            <Route path="/playlists/:id" element={<ProtectedRoute><AlbumDetailsPages type="playlist" /></ProtectedRoute>} />
+              <Route path="/" element={<ProtectedRoute><Navigate to="/albums" replace /></ProtectedRoute>} />
+              <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
+              <Route path="/albums" element={<ProtectedRoute><AlbumsPage /></ProtectedRoute>} />
+              <Route path="/albums/:id" element={<ProtectedRoute><AlbumDetailsPages /></ProtectedRoute>} />
+              <Route path="/artists" element={<ProtectedRoute><ArtistsPage /></ProtectedRoute>} />
+              <Route path="/artists/:id" element={<ProtectedRoute><ArtistDetailsPage /></ProtectedRoute>} />
+              <Route path="/songs" element={<ProtectedRoute><TracksPage /></ProtectedRoute>} />
+              <Route path="/playlists" element={<ProtectedRoute><PlaylistsPage /></ProtectedRoute>} />
+              <Route path="/playlists/:id" element={<ProtectedRoute><AlbumDetailsPages type="playlist" /></ProtectedRoute>} />
 
-            <Route path="*" element={<Navigate to="/albums" replace />} />
-          </Routes>
+              <Route path="*" element={<Navigate to="/albums" replace />} />
+            </Routes>
+          </div>
         </main>
       </div>
     </PlayerProvider>
