@@ -106,7 +106,6 @@ const Player: React.FC = () => {
     
   if (!currentTrack) return null;
 
-  const artistName = currentTrack.artists?.[0]?.name ?? '—';
   const albumTitle = currentTrack.album?.title ?? '—';
   const coverUrl = buildCoverUrl(currentTrack.coverPath);
 
@@ -137,15 +136,26 @@ const Player: React.FC = () => {
             <p className="font-bold">{currentTrack.title}</p>
 
             <div className="truncate">
-              {currentTrack.artists?.[0]?.id ? (
-                <Link
-                  to={`/artists/${currentTrack.artists[0].id}`}
-                  className="text-link hover:underline hover:text-primary transition-colors"
-                >
-                  {artistName}
-                </Link>
+              {currentTrack.artists && currentTrack.artists.length > 0 ? (
+                <span className="text-link">
+                  {currentTrack.artists.map((artist, artistIndex) => (
+                    <span key={artist.id ?? `${currentTrack.id}-artist-${artistIndex}`}>
+                      {artist.id ? (
+                        <Link
+                          to={`/artists/${artist.id}`}
+                          className="hover:underline hover:text-primary transition-colors"
+                        >
+                          {artist.name}
+                        </Link>
+                      ) : (
+                        <span className="text-fg/70">{artist.name}</span>
+                      )}
+                      {artistIndex < (currentTrack.artists?.length ?? 0) - 1 && <span>, </span>}
+                    </span>
+                  ))}
+                </span>
               ) : (
-                <span className="text-fg/70">{artistName}</span>
+                <span className="text-fg/70">—</span>
               )}
               <span className="mx-1">&bull;</span>
               {currentTrack.albumId ? (

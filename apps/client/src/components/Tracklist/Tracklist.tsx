@@ -179,14 +179,25 @@ const Tracklist: React.FC<TracklistProps> = ({
                 </div>
               )}
 
-              {track.artists?.[0]?.id ? (
-                <Link
-                  to={`/artists/${track.artists[0].id}`}
-                  className="hover:underline relative text-link text-left"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {track.artists[0]?.name}
-                </Link>
+              {track.artists && track.artists.length > 0 ? (
+                <span className="text-left text-link">
+                  {track.artists.map((artist, artistIndex) => (
+                    <span key={artist.id ?? `${track.id}-artist-${artistIndex}`}>
+                      {artist.id ? (
+                        <Link
+                          to={`/artists/${artist.id}`}
+                          className="hover:underline relative"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {artist.name}
+                        </Link>
+                      ) : (
+                        <span className="text-fg/70">{artist.name}</span>
+                      )}
+                      {artistIndex < (track.artists?.length ?? 0) - 1 && <span>, </span>}
+                    </span>
+                  ))}
+                </span>
               ) : (
                 <span className="text-left text-fg/70">—</span>
               )}

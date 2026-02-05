@@ -37,12 +37,27 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
         <h1 className='text-2xl'>{album.title}</h1>
 
         <h2>
-          <Link 
-            to={album.artists?.[0]?.id ? `/artists/${album.artists[0].id}` : '#'} 
-            className="hover:underline hover:text-primary transition-colors text-link"
-          >
-            {(album.artists ?? []).map(artist => artist.name).join(', ') || '—'}
-          </Link>
+          {album.artists && album.artists.length > 0 ? (
+            <span className="text-link">
+              {album.artists.map((artist, artistIndex) => (
+                <span key={artist.id ?? `album-artist-${artistIndex}`}>
+                  {artist.id ? (
+                    <Link
+                      to={`/artists/${artist.id}`}
+                      className="hover:underline hover:text-primary transition-colors"
+                    >
+                      {artist.name}
+                    </Link>
+                  ) : (
+                    <span className="text-fg/70">{artist.name}</span>
+                  )}
+                  {artistIndex < (album.artists?.length ?? 0) - 1 && <span>, </span>}
+                </span>
+              ))}
+            </span>
+          ) : (
+            <span className="text-fg/70">—</span>
+          )}
         </h2>
 
         <p>
@@ -53,7 +68,7 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
           <div className='flex flex-wrap gap-2 mt-2 justify-center md:justify-start'>
             {uniqueGenres.map((genre) => (
               <button
-                key={genre.name}
+                key={genre.id}
                 onClick={() => handleGenreClick(genre.name)}
                 className='px-3 py-1 text-sm cursor-pointer rounded-full border border-fg/25 hover:bg-fg/10 hover:border-fg/40 transition-colors'
               >

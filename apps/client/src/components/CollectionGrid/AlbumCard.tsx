@@ -21,7 +21,7 @@ const AlbumCard = ({ album, onSelect }: AlbumCardProps) => {
       </div>
       <h3 className="mt-1 truncate">{album.title}</h3>
       <p className="text-sm text-fg">
-        {album.artists?.[0]?.name ?? '—'} &bull; {album.date ?? '—'}
+        {(album.artists ?? []).map(artist => artist.name).join(', ') || '—'} &bull; {album.date ?? '—'}
       </p>
     </div>
   );
