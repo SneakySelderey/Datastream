@@ -49,7 +49,6 @@ const ArtistsPage = () => {
 
   return (
     <div className='m-5'>    
-      {isLoading && <p className="text-fg/50 text-sm">{t('loading')}</p>}
       {error && <p>{error}</p>}
 
       <div className="w-full md:w-96 mb-5">

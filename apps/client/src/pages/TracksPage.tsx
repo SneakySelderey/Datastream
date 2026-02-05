@@ -74,9 +74,7 @@ const TracksPage = () => {
   };
 
   return (
-    <div className='m-5'>    
-      {isLoading && <p className="text-fg/50 text-sm">{t('loading')}</p>}
-
+    <div className='m-5 relative'>    
       {error && <p>{error}</p>}
 
       <Filters 

@@ -39,7 +39,7 @@ const AlbumDetailsPage: React.FC<AlbumDetailsPageProps> = ({ type = 'album' }) =
     return <div className="p-6">Error: album ID missing!</div>;
   }
   if (isLoading) {
-    return <div className="p-8 text-fg/50 text-sm">{t('loading')}</div>;
+    return <div className="p-8" />;
   }
   if (error) {
     return <div className="p-8">{t('error')}: {error}</div>;

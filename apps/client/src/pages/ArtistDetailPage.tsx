@@ -47,8 +47,6 @@ const ArtistDetailsPage = () => {
   return (
     <div className='m-5'>
       <div className="mb-8">
-        {isArtistLoading && <p className="text-fg/50 text-sm">{t('loading')}</p>}
-        
         {!isArtistLoading && (
             <h1 className="text-3xl font-bold">{artist?.name}</h1>
         )}
@@ -56,7 +54,6 @@ const ArtistDetailsPage = () => {
         <p className="mt-2">{t('artistDiscography', 'Discography')}</p>
       </div>
 
-      {isLoading && <p className="text-fg/50 text-sm">{t('loading')}</p>}
       {error && <p>{error}</p>}
 
       {!isLoading && !error && albums.length > 0 && (
