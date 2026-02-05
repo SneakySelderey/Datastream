@@ -9,10 +9,11 @@ interface PlayQueueProps {
   queue: Track[];
   currentQueueIndex: number;
   onPlayTrack: (track: Track, queueIndex: number) => void;
+  onRemoveTrack: (queueIndex: number) => void;
   onClose: () => void;
 }
 
-const PlayQueue: React.FC<PlayQueueProps> = ({ queue, currentQueueIndex, onPlayTrack, onClose }) => {
+const PlayQueue: React.FC<PlayQueueProps> = ({ queue, currentQueueIndex, onPlayTrack, onRemoveTrack, onClose }) => {
   const { t } = useTranslation();
 
   return (
@@ -42,11 +43,22 @@ const PlayQueue: React.FC<PlayQueueProps> = ({ queue, currentQueueIndex, onPlayT
                 className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors text-sm
                             ${isCurrent ? 'bg-fg/10' : 'hover:bg-fg/5'}`}
               >
-
-                <div className="flex flex-col overflow-hidden">
+                <div className="flex flex-col overflow-hidden flex-1">
                   <span className="truncate">{qTrack.title}</span>
                   <span className="truncate text-xs">{qTrack.artists?.[0]?.name ?? '—'}</span>
                 </div>
+
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRemoveTrack(index);
+                  }}
+                  className="p-1 hover:bg-fg/10 rounded-full transition-colors"
+                  title="Remove from queue"
+                  aria-label="Remove from queue"
+                >
+                  <CloseIcon className="w-4 h-4 fill-current" />
+                </button>
               </li>
             );
           })}

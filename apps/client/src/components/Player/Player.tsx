@@ -15,7 +15,7 @@ import PlayQueue from './PlayQueue';
 import { buildCoverUrl, buildTrackUrl, formatTime } from '../../types';
 
 const Player: React.FC = () => {
-  const { currentTrack, isPlaying, queue, currentQueueIndex, togglePlay, setTrack, setTrackPlays } = usePlayer();
+  const { currentTrack, isPlaying, queue, currentQueueIndex, togglePlay, setTrack, setTrackPlays, removeTrackFromQueue } = usePlayer();
 
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
@@ -126,6 +126,7 @@ const Player: React.FC = () => {
           queue={queue}
           currentQueueIndex={currentQueueIndex}
           onPlayTrack={setTrack}
+          onRemoveTrack={removeTrackFromQueue}
           onClose={() => setIsQueueOpen(false)}
         />
       )}

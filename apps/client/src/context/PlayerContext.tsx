@@ -33,6 +33,7 @@ interface PlayerContextType {
   addTracks: (addQueue: Track[]) => void;
   addTracksNext: (addQueue: Track[]) => void;
   setTrack: (track: Track, queueIndex: number) => void;
+  removeTrackFromQueue: (queueIndex: number) => void;
   setTrackPlays: (trackId: string, plays: number) => void;
   bumpLibraryVersion: () => void;
   togglePlay: () => void;
@@ -77,6 +78,35 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
     setIsPlaying(true);
   };
 
+  const removeTrackFromQueue = (queueIndex: number) => {
+    setQueue(prev => {
+      if (queueIndex < 0 || queueIndex >= prev.length) return prev;
+
+      const nextQueue = prev.filter((_, index) => index !== queueIndex);
+
+      if (queueIndex < currentQueueIndex) {
+        setCurrentQueueIndex(currentQueueIndex - 1);
+        return nextQueue;
+      }
+
+      if (queueIndex === currentQueueIndex) {
+        if (nextQueue.length === 0) {
+          setCurrentTrack(defaultTrack);
+          setCurrentQueueIndex(0);
+          setIsPlaying(false);
+          return nextQueue;
+        }
+
+        const nextIndex = Math.min(currentQueueIndex, nextQueue.length - 1);
+        setCurrentQueueIndex(nextIndex);
+        setCurrentTrack(nextQueue[nextIndex]);
+        return nextQueue;
+      }
+
+      return nextQueue;
+    });
+  };
+
   const setTrackPlays = (trackId: string, plays: number) => {
     setPlayCounts(prev => ({
       ...prev,
@@ -95,7 +125,7 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   return (
     <PlayerContext.Provider value={{ 
       currentTrack, isPlaying, queue, currentQueueIndex, playCounts, libraryVersion,
-      playTrack, addTracks, addTracksNext, setTrack, setTrackPlays, bumpLibraryVersion, togglePlay 
+      playTrack, addTracks, addTracksNext, setTrack, removeTrackFromQueue, setTrackPlays, bumpLibraryVersion, togglePlay 
     }}>
       {children}
     </PlayerContext.Provider>
