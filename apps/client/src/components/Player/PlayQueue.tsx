@@ -7,12 +7,12 @@ import CloseIcon from '../../assets/close.svg?react';
 
 interface PlayQueueProps {
   queue: Track[];
-  currentTrack: Track;
-  onPlayTrack: (track: Track) => void;
+  currentQueueIndex: number;
+  onPlayTrack: (track: Track, queueIndex: number) => void;
   onClose: () => void;
 }
 
-const PlayQueue: React.FC<PlayQueueProps> = ({ queue, currentTrack, onPlayTrack, onClose }) => {
+const PlayQueue: React.FC<PlayQueueProps> = ({ queue, currentQueueIndex, onPlayTrack, onClose }) => {
   const { t } = useTranslation();
 
   return (
@@ -32,13 +32,13 @@ const PlayQueue: React.FC<PlayQueueProps> = ({ queue, currentTrack, onPlayTrack,
       </div>
 
       <ul className="flex flex-col p-2">
-        {(queue.map((qTrack) => {
-            const isCurrent = currentTrack.id === qTrack.id;
+        {queue.map((qTrack, index) => {
+            const isCurrent = index === currentQueueIndex;
 
             return (
               <li
-                key={`${qTrack.id}`}
-                onClick={() => onPlayTrack(qTrack)}
+                key={`${qTrack.id}-${index}`}
+                onClick={() => onPlayTrack(qTrack, index)}
                 className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors text-sm
                             ${isCurrent ? 'bg-fg/10' : 'hover:bg-fg/5'}`}
               >
@@ -49,8 +49,7 @@ const PlayQueue: React.FC<PlayQueueProps> = ({ queue, currentTrack, onPlayTrack,
                 </div>
               </li>
             );
-          })
-        )}
+          })}
       </ul>
     </div>
   );

@@ -15,16 +15,15 @@ import PlayQueue from './PlayQueue';
 import { buildCoverUrl, buildTrackUrl, formatTime } from '../../types';
 
 const Player: React.FC = () => {
-  const { currentTrack, isPlaying, queue, togglePlay, setTrack, setTrackPlays } = usePlayer();
+  const { currentTrack, isPlaying, queue, currentQueueIndex, togglePlay, setTrack, setTrackPlays } = usePlayer();
 
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [volume, setVolume] = useLocalStorage<number>('player-volume', 0.5);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
 
-  const currentIndex = queue.findIndex(t => t.id === currentTrack.id);
-  const hasPrev = currentIndex > 0;
-  const hasNext = currentIndex !== -1 && currentIndex < queue.length - 1;
+  const hasPrev = currentQueueIndex > 0;
+  const hasNext = currentQueueIndex !== -1 && currentQueueIndex < queue.length - 1;
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -39,6 +38,17 @@ const Player: React.FC = () => {
   }, [isPlaying, currentTrack]);
 
   useEffect(() => {
+    if (!audioRef.current) return;
+
+    audioRef.current.currentTime = 0;
+    setCurrentTime(0);
+
+    if (isPlaying) {
+      audioRef.current.play().catch(error => console.error("Playback error:", error));
+    }
+  }, [currentQueueIndex]);
+
+  useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
     }
@@ -46,13 +56,13 @@ const Player: React.FC = () => {
 
   const handlePrev = () => {
     if (hasPrev) {
-      setTrack(queue[currentIndex - 1]);
+      setTrack(queue[currentQueueIndex - 1], currentQueueIndex - 1);
     }
   };
 
   const handleNext = () => {
     if (hasNext) {
-      setTrack(queue[currentIndex + 1]);
+      setTrack(queue[currentQueueIndex + 1], currentQueueIndex + 1);
     }
   };
 
@@ -114,7 +124,7 @@ const Player: React.FC = () => {
       {isQueueOpen && (
         <PlayQueue
           queue={queue}
-          currentTrack={currentTrack}
+          currentQueueIndex={currentQueueIndex}
           onPlayTrack={setTrack}
           onClose={() => setIsQueueOpen(false)}
         />

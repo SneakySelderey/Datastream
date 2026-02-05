@@ -12,7 +12,7 @@ import { type Track, formatTime } from '../../types';
 
 interface TracklistProps {
   tracks: Track[];
-  onPlayTrack: (track: Track, queue: Track[]) => void;
+  onPlayTrack: (track: Track, queue: Track[], startIndex: number) => void;
   showAlbum?: boolean;
   selectedIds: string[];
   onSelectionChange: (ids: string[]) => void;
@@ -166,7 +166,13 @@ const Tracklist: React.FC<TracklistProps> = ({
           return (
             <div
               key={track.id}
-              onClick={() => { if (!showAlbum) { onPlayTrack(track, tracks) } else { onPlayTrack(track, [track]) } }}
+              onClick={() => {
+                if (!showAlbum) {
+                  onPlayTrack(track, tracks, index);
+                } else {
+                  onPlayTrack(track, [track], 0);
+                }
+              }}
               className="col-span-full grid grid-cols-subgrid gap-x-6 items-center text-center px-3
                       border-x border-b border-fg/25 hover:bg-accent transition-colors
                       last:rounded-b-xl last:shadow-sm cursor-pointer"
