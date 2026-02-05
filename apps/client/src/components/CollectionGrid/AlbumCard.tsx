@@ -13,10 +13,11 @@ const AlbumCard = ({ album, onSelect }: AlbumCardProps) => {
       className="p-2 hover:bg-hv transition-colors duration-300 cursor-pointer"
       onClick={() => onSelect(album)}
     >
-      <div>
+      <div className="aspect-square">
         <img
           src={coverUrl ?? ''}
           alt={`${album.title} album cover`}
+          className="h-full w-full object-cover"
         />
       </div>
       <h3 className="mt-1 truncate">{album.title}</h3>

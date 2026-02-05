@@ -23,11 +23,12 @@ const PlaylistCard = ({ playlist, onSelect }: PlaylistCardProps) => {
       className="p-2 hover:bg-hv transition-colors duration-300 cursor-pointer"
       onClick={() => onSelect(playlist)}
     >
-      <div className="aspect-square bg-hv/50 flex items-center justify-center">
+      <div className="aspect-square">
         {coverUrl ? (
           <img
             src={coverUrl}
             alt={`${playlist.title} playlist cover`}
+            className="h-full w-full object-cover"
           />
         ) : (
           <span className="text-sm text-fg/60">Playlist</span>
