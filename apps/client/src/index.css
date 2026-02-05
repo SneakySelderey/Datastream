@@ -17,3 +17,20 @@
     --color-link: #2b8cdb;
   }
 }
+
+@layer utilities {
+  @keyframes fade-in-soft {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-soft {
+    animation: fade-in-soft 320ms ease-out;
+  }
+}

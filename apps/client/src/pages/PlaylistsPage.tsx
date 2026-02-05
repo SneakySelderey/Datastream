@@ -46,7 +46,7 @@ const PlaylistsPage = () => {
   };
 
   return (
-    <div className='m-5'>    
+    <div className='m-5 animate-fade-in-soft'>    
       {isLoading && <p>{t('loading')}</p>}
       {error && <p>{error}</p>}
 

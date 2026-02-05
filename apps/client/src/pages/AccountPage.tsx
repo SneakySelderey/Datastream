@@ -121,7 +121,7 @@ const AccountPage: React.FC = () => {
   };
 
   return (
-    <div className='p-7 text-lg transition-all ease-in-out duration-300'>
+    <div className='p-7 text-lg transition-all ease-in-out duration-300 animate-fade-in-soft'>
       <h1 className='text-3xl mb-10'>{user?.name}</h1>
       <div className='flex flex-col gap-5'>
         <div className='flex gap-4 items-center'>

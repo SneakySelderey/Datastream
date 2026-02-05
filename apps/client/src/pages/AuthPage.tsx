@@ -27,7 +27,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ mode }) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="w-full max-w-md bg-bg border border-fg/10 rounded-2xl shadow-xl p-8">
+      <div className="w-full max-w-md bg-bg border border-fg/10 rounded-2xl shadow-xl p-8 animate-fade-in-soft">
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Datastream</h1>
