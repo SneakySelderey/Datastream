@@ -54,6 +54,8 @@ export class ScannerService implements OnModuleInit {
     coverFilename: string | null;
     trackArtists: string[];
     albumArtists: string[];
+    nativeTrackArtistTags: string[];
+    nativeAlbumArtistTags: string[];
     genres: string[];
     albumTitle: string;
   }) {
@@ -89,6 +91,40 @@ export class ScannerService implements OnModuleInit {
     );
 
     return records.map(g => ({ id: g.id }));
+  }
+
+  private normalizeArtists(value?: string | string[] | null): string[] {
+    if (!value) return [];
+
+    const raw = Array.isArray(value) ? value : [value];
+    const normalized = raw
+      .flatMap((entry) => entry.split('\u0000'))
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+
+    return Array.from(new Set(normalized));
+  }
+
+  private getNativeTagValues(metadata: any, tagIds: string[]): string[] {
+    if (!metadata?.native) return [];
+
+    const ids = new Set(tagIds.map((id) => id.toLowerCase()));
+    const values: string[] = [];
+
+    Object.values(metadata.native).forEach((tags: any) => {
+      tags.forEach((tag: any) => {
+        if (!tag?.id) return;
+        if (!ids.has(String(tag.id).toLowerCase())) return;
+
+        const rawValues = Array.isArray(tag.value) ? tag.value : [tag.value];
+        rawValues.forEach((value) => {
+          if (value === null || value === undefined) return;
+          values.push(String(value));
+        });
+      });
+    });
+
+    return values;
   }
 
   private async pruneUnusedCovers() {
@@ -143,8 +179,26 @@ export class ScannerService implements OnModuleInit {
 
         const c = common as any; 
 
-        const trackArtists: string[] = common.artists || (common.artist ? [common.artist] : ['Unknown Artist']);
-        const albumArtists: string[] = c.albumartists || (common.albumartist ? [common.albumartist] : null) || trackArtists;
+        const nativeTrackArtists = this.getNativeTagValues(metadata, ['ARTIST', 'ARTISTS']);
+        let trackArtists = this.normalizeArtists(common.artists ?? common.artist ?? nativeTrackArtists);
+        if (trackArtists.length === 0) {
+          trackArtists = ['Unknown Artist'];
+        }
+
+        const nativeAlbumArtists = this.getNativeTagValues(metadata, [
+          'ALBUMARTIST',
+          'ALBUM ARTIST',
+          'ALBUMARTISTS',
+          'ALBUM ARTISTS',
+        ]);
+        const albumArtistsFromCommon = this.normalizeArtists(c.albumartists ?? common.albumartist);
+        const albumArtistsFromNative = this.normalizeArtists(nativeAlbumArtists);
+        const albumArtists =
+          albumArtistsFromNative.length > 0
+            ? albumArtistsFromNative
+            : albumArtistsFromCommon.length > 0
+            ? albumArtistsFromCommon
+            : trackArtists;
         
         const genres = common.genre || [];
         const albumTitle = common.album || 'Unknown Album';
@@ -167,6 +221,8 @@ export class ScannerService implements OnModuleInit {
           coverFilename,
           trackArtists,
           albumArtists,
+          nativeTrackArtistTags: this.normalizeArtists(nativeTrackArtists),
+          nativeAlbumArtistTags: this.normalizeArtists(nativeAlbumArtists),
           genres,
           albumTitle,
         });
@@ -179,6 +235,7 @@ export class ScannerService implements OnModuleInit {
         let album = await this.prisma.album.findFirst({
           where: {
             title: albumTitle,
+            ...(releaseDate ? { date: releaseDate } : {}),
             artists: { 
               some: { name: { in: albumArtists } } 
             }
@@ -197,6 +254,18 @@ export class ScannerService implements OnModuleInit {
                 }))
               }
             }
+          });
+        } else if (albumArtists.length > 0) {
+          await this.prisma.album.update({
+            where: { id: album.id },
+            data: {
+              artists: {
+                connectOrCreate: albumArtists.map(name => ({
+                  where: { name },
+                  create: { name }
+                }))
+              }
+            },
           });
         }
 
