@@ -10,6 +10,13 @@ export interface ScanProgress {
   finishedAt?: string;
 }
 
+export interface LastRescanInfo {
+  startedAt: string;
+  finishedAt: string;
+  durationMs: number;
+  totalFolders: number;
+}
+
 export interface Track {
   id: string;
   title: string;

@@ -61,7 +61,12 @@ const resources = {
       "removeFromPlaylist": "Remove from playlist",
       "errorRemovingTracks": "Failed to remove tracks",
       "rescanLibrary": "Rescan library",
-      "scanProgress": "Scanning folders: {{scanned}} / {{total}}"
+      "scanProgress": "Scanning folders: {{scanned}} / {{total}}",
+      "rescan": "Rescan",
+      "lastRescanTime": "Last rescan",
+      "lastRescanDuration": "Last rescan duration",
+      "lastRescanFolders": "Folders",
+      "notAvailable": "N/A"
     }
   },
   ru: {
@@ -123,7 +128,12 @@ const resources = {
       "removeFromPlaylist": "Удалить из плейлиста",
       "errorRemovingTracks": "Не удалось удалить треки",
       "rescanLibrary": "Пересканировать библиотеку",
-      "scanProgress": "Сканирование папок: {{scanned}} / {{total}}"
+      "scanProgress": "Сканирование папок: {{scanned}} / {{total}}",
+      "rescan": "Пересканировать",
+      "lastRescanTime": "Последний перескан",
+      "lastRescanDuration": "Длительность перескана",
+      "lastRescanFolders": "Папок",
+      "notAvailable": "Н/Д"
     }
   }
 };

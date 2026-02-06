@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { io } from 'socket.io-client';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { type ScanProgress, type ScanStatus, type Track } from '../types';
+import { type LastRescanInfo, type ScanProgress, type ScanStatus, type Track } from '../types';
 
 const defaultTrack: Track = { 
   id: '0',
@@ -37,6 +37,7 @@ interface PlayerContextType {
   playCounts: Record<string, number>;
   libraryVersion: number;
   scanProgress: ScanProgress;
+  lastRescanInfo: LastRescanInfo | null;
   playTrack: (track: Track, newQueue: Track[], startIndex?: number) => void;
   addTracks: (addQueue: Track[]) => void;
   addTracksNext: (addQueue: Track[]) => void;
@@ -57,6 +58,7 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   const [playCounts, setPlayCounts] = useState<Record<string, number>>({});
   const [libraryVersion, setLibraryVersion] = useState(0);
   const [scanProgress, setScanProgress] = useState<ScanProgress>(defaultScanProgress);
+  const [lastRescanInfo, setLastRescanInfo] = useLocalStorage<LastRescanInfo | null>('last-rescan-info', null);
   const lastScanStatusRef = useRef<ScanStatus>('idle');
 
   useEffect(() => {
@@ -68,6 +70,21 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
 
     socket.on('scan.progress', (payload: ScanProgress) => {
       setScanProgress(payload);
+
+      if (payload.status === 'completed' && payload.startedAt && payload.finishedAt) {
+        const startedTs = new Date(payload.startedAt).getTime();
+        const finishedTs = new Date(payload.finishedAt).getTime();
+        const durationMs = Number.isFinite(startedTs) && Number.isFinite(finishedTs)
+          ? Math.max(0, finishedTs - startedTs)
+          : 0;
+
+        setLastRescanInfo({
+          startedAt: payload.startedAt,
+          finishedAt: payload.finishedAt,
+          durationMs,
+          totalFolders: payload.totalFolders,
+        });
+      }
 
       const previousStatus = lastScanStatusRef.current;
       if (previousStatus !== 'completed' && payload.status === 'completed') {
@@ -157,7 +174,7 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <PlayerContext.Provider value={{ 
-      currentTrack, isPlaying, queue, currentQueueIndex, playCounts, libraryVersion, scanProgress,
+      currentTrack, isPlaying, queue, currentQueueIndex, playCounts, libraryVersion, scanProgress, lastRescanInfo,
       playTrack, addTracks, addTracksNext, setTrack, removeTrackFromQueue, setTrackPlays, bumpLibraryVersion, togglePlay 
     }}>
       {children}
