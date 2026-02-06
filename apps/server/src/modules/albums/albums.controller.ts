@@ -21,8 +21,9 @@ export class AlbumsController {
     @Query('year') year = '',
     @Query('artistId') artistId = '',
     @Query('order') order = 'default',
+    @Query('randomSeed') randomSeed = '',
   ) {
-    return this.albumsService.findAll(req.user.id, +page, +limit, search, genre, year, artistId, order);
+    return this.albumsService.findAll(req.user.id, +page, +limit, search, genre, year, artistId, order, randomSeed);
   }
 
   @Get(':id')

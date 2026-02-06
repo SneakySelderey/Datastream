@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { createHash } from 'crypto';
 
 @Injectable()
 export class AlbumsService {
@@ -14,6 +15,7 @@ export class AlbumsService {
     year?: string,
     artistId?: string,
     order?: string,
+    randomSeed?: string,
   ) {
     const skip = (page - 1) * limit;
 
@@ -42,8 +44,6 @@ export class AlbumsService {
 
     if (order === 'recently-added') {
       orderBy = { createdAt: 'desc' };
-    } else if (order === 'random') {
-      orderBy = { id: 'asc' };
     }
 
     if (order === 'most-played') {
@@ -91,6 +91,56 @@ export class AlbumsService {
       return {
         data: paged,
         total: sorted.length,
+        meta: {
+          genres: allGenres.map(g => g.name),
+          years: uniqueYears,
+        },
+      };
+    }
+
+    if (order === 'random') {
+      const [albums, allGenres, allAlbumsDates] = await Promise.all([
+        this.prisma.album.findMany({
+          where,
+          include: {
+            artists: true,
+            tracks: {
+              select: { coverPath: true },
+              orderBy: { number: 'asc' },
+              take: 1,
+            },
+          },
+        }),
+        this.prisma.genre.findMany({ select: { name: true } }),
+        this.prisma.album.findMany({
+          select: { date: true },
+          distinct: ['date'],
+          where: { date: { not: null } },
+        }),
+      ]);
+
+      const seed = randomSeed || 'albums-random-default-seed';
+      const sortedBySeed = albums
+        .map((album) => ({
+          album,
+          key: createHash('sha256').update(`${seed}:${album.id}`).digest('hex'),
+        }))
+        .sort((a, b) => a.key.localeCompare(b.key) || a.album.id.localeCompare(b.album.id))
+        .map((entry) => entry.album);
+
+      const paged = sortedBySeed.slice(skip, skip + Number(limit));
+      const data = paged.map((album) => {
+        const coverPath = album.tracks[0]?.coverPath ?? null;
+        return { ...album, coverPath };
+      });
+
+      const uniqueYears = [...new Set(
+        allAlbumsDates.map(a => a.date?.substring(0, 4)).filter(Boolean)
+      )].sort().reverse();
+
+      return {
+        data,
+        total: sortedBySeed.length,
         meta: {
           genres: allGenres.map(g => g.name),
           years: uniqueYears,

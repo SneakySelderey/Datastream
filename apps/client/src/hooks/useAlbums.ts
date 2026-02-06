@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import { type Album, type FilterState, type OrderMode } from '../types';
 import { usePlayer } from '../context/PlayerContext';
@@ -21,6 +21,16 @@ export const useAlbums = (
   const { libraryVersion } = usePlayer();
   const [availableGenres, setAvailableGenres] = useState<string[]>([]);
   const [availableYears, setAvailableYears] = useState<string[]>([]);
+  const randomSeedRef = useRef<string>(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const prevOrderModeRef = useRef<OrderMode>(orderMode);
+
+  useEffect(() => {
+    if (prevOrderModeRef.current !== 'random' && orderMode === 'random') {
+      randomSeedRef.current = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    prevOrderModeRef.current = orderMode;
+  }, [orderMode]);
 
   useEffect(() => {
     const fetchAlbums = async () => {
@@ -36,6 +46,10 @@ export const useAlbums = (
             artistId: artistId || '',
             order: orderMode
         });
+
+        if (orderMode === 'random') {
+          params.set('randomSeed', randomSeedRef.current);
+        }
 
         const response = await fetch(`/api/albums?${params}`);
 
