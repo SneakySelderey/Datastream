@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { type Track, type FilterState, type OrderMode } from '../types';
 import { usePlayer } from '../context/PlayerContext';
 
@@ -20,6 +20,16 @@ export const useTracks = (page: number, limit: number, filters: FilterState, ord
   const [availableGenres, setAvailableGenres] = useState<string[]>([]);
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const { playCounts, libraryVersion } = usePlayer();
+  const randomSeedRef = useRef<string>(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const prevOrderModeRef = useRef<OrderMode>(orderMode);
+
+  useEffect(() => {
+    if (prevOrderModeRef.current !== 'random' && orderMode === 'random') {
+      randomSeedRef.current = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    prevOrderModeRef.current = orderMode;
+  }, [orderMode]);
 
   useEffect(() => {
     const fetchTracks = async () => {
@@ -32,6 +42,10 @@ export const useTracks = (page: number, limit: number, filters: FilterState, ord
           limit: limit.toString(),
           order: orderMode,
         });
+
+        if (orderMode === 'random') {
+          params.set('randomSeed', randomSeedRef.current);
+        }
 
         if (filters.search) params.append('search', filters.search);
         if (filters.genre) params.append('genre', filters.genre);

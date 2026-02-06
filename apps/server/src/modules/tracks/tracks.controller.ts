@@ -20,8 +20,9 @@ export class TracksController {
     @Query('genre') genre = '',
     @Query('year') year = '',
     @Query('order') order = 'default',
+    @Query('randomSeed') randomSeed = '',
   ) {
-    return this.tracksService.findAll(req.user.id, +page, +limit, search, genre, year, order);
+    return this.tracksService.findAll(req.user.id, +page, +limit, search, genre, year, order, randomSeed);
   }
 
   @Get(':id')

@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { createHash } from 'crypto';
 
 @Injectable()
 export class TracksService {
@@ -14,6 +15,7 @@ export class TracksService {
     genre?: string,
     year?: string,
     order?: string,
+    randomSeed?: string,
   ) {
     const skip = (page - 1) * limit;
 
@@ -45,8 +47,6 @@ export class TracksService {
 
     if (order === 'recently-added') {
       orderBy = { createdAt: 'desc' };
-    } else if (order === 'random') {
-      orderBy = { id: 'asc' }; 
     }
 
     if (order === 'most-played') {
@@ -81,6 +81,50 @@ export class TracksService {
       return {
         data,
         total: sorted.length,
+        meta: {
+          genres: allGenres.map(g => g.name),
+          years: uniqueYears,
+        },
+      };
+    }
+
+    if (order === 'random') {
+      const [tracks, allGenres, allTracksDates] = await Promise.all([
+        this.prisma.track.findMany({
+          where,
+          include,
+        }),
+        this.prisma.genre.findMany({ select: { name: true } }),
+        this.prisma.track.findMany({
+          select: { date: true },
+          distinct: ['date'],
+          where: { date: { not: null } },
+        }),
+      ]);
+
+      const seed = randomSeed || 'tracks-random-default-seed';
+      const sortedBySeed = tracks
+        .map((track) => ({
+          track,
+          key: createHash('sha256').update(`${seed}:${track.id}`).digest('hex'),
+        }))
+        .sort((a, b) => a.key.localeCompare(b.key) || a.track.id.localeCompare(b.track.id))
+        .map((entry) => entry.track);
+
+      const data = sortedBySeed
+        .slice(skip, skip + Number(limit))
+        .map(({ playStats, ...rest }) => ({
+          ...rest,
+          plays: playStats?.[0]?.plays ?? 0,
+        }));
+
+      const uniqueYears = [...new Set(
+        allTracksDates.map(t => t.date?.substring(0, 4)).filter(Boolean)
+      )].sort().reverse();
+
+      return {
+        data,
+        total: sortedBySeed.length,
         meta: {
           genres: allGenres.map(g => g.name),
           years: uniqueYears,
