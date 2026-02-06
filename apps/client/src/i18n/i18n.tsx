@@ -60,7 +60,8 @@ const resources = {
       "errorAddingTracks": "Failed to add tracks",
       "removeFromPlaylist": "Remove from playlist",
       "errorRemovingTracks": "Failed to remove tracks",
-      "rescanLibrary": "Rescan library"
+      "rescanLibrary": "Rescan library",
+      "scanProgress": "Scanning folders: {{scanned}} / {{total}}"
     }
   },
   ru: {
@@ -121,7 +122,8 @@ const resources = {
       "errorAddingTracks": "Не удалось добавить треки",
       "removeFromPlaylist": "Удалить из плейлиста",
       "errorRemovingTracks": "Не удалось удалить треки",
-      "rescanLibrary": "Пересканировать библиотеку"
+      "rescanLibrary": "Пересканировать библиотеку",
+      "scanProgress": "Сканирование папок: {{scanned}} / {{total}}"
     }
   }
 };

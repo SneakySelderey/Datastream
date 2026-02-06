@@ -7,7 +7,7 @@ export class ScannerController {
 
   @Post('rescan')
   async rescan() {
-    await this.scannerService.scanLibrary();
-    return { status: 'ok' };
+    const started = await this.scannerService.scanLibrary();
+    return { status: started ? 'started' : 'already-running' };
   }
 }

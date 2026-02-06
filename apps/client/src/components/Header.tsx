@@ -24,8 +24,9 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
   const { t } = useTranslation();
   const location = useLocation();
-  const [isRescanning, setIsRescanning] = useState(false);
-  const { bumpLibraryVersion } = usePlayer();
+  const [isRescanRequestInFlight, setIsRescanRequestInFlight] = useState(false);
+  const { scanProgress } = usePlayer();
+  const isRescanning = scanProgress.status === 'running' || isRescanRequestInFlight;
 
   const generatePageTitle = (): string => {
     const { pathname } = location;
@@ -46,14 +47,13 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
 
   const handleRescan = async () => {
     if (isRescanning) return;
-    setIsRescanning(true);
+    setIsRescanRequestInFlight(true);
     try {
       await fetch('/api/scanner/rescan', { method: 'POST' });
-      bumpLibraryVersion();
     } catch (e) {
       console.error(e);
     } finally {
-      setIsRescanning(false);
+      setIsRescanRequestInFlight(false);
     }
   };
 
@@ -74,6 +74,15 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
       </div>
 
       <div className='flex items-center gap-6'>
+        {scanProgress.status === 'running' && (
+          <span className='hidden md:inline text-sm text-fg/80'>
+            {t('scanProgress', {
+              scanned: scanProgress.foldersScanned,
+              total: scanProgress.totalFolders,
+            })}
+          </span>
+        )}
+
         <button
           onClick={onChangeTheme}
           title={t('changeTheme')}

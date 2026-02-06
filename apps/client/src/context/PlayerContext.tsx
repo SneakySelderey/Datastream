@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { io } from 'socket.io-client';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { type Track } from '../types';
+import { type ScanProgress, type ScanStatus, type Track } from '../types';
 
 const defaultTrack: Track = { 
   id: '0',
@@ -22,6 +23,12 @@ const defaultTrack: Track = {
   }],
 };
 
+const defaultScanProgress: ScanProgress = {
+  status: 'idle',
+  foldersScanned: 0,
+  totalFolders: 0,
+};
+
 interface PlayerContextType {
   currentTrack: Track;
   isPlaying: boolean;
@@ -29,6 +36,7 @@ interface PlayerContextType {
   currentQueueIndex: number;
   playCounts: Record<string, number>;
   libraryVersion: number;
+  scanProgress: ScanProgress;
   playTrack: (track: Track, newQueue: Track[], startIndex?: number) => void;
   addTracks: (addQueue: Track[]) => void;
   addTracksNext: (addQueue: Track[]) => void;
@@ -48,6 +56,31 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playCounts, setPlayCounts] = useState<Record<string, number>>({});
   const [libraryVersion, setLibraryVersion] = useState(0);
+  const [scanProgress, setScanProgress] = useState<ScanProgress>(defaultScanProgress);
+  const lastScanStatusRef = useRef<ScanStatus>('idle');
+
+  useEffect(() => {
+    const socket = io('/scanner', {
+      path: '/api/socket.io',
+      transports: ['websocket'],
+      withCredentials: true,
+    });
+
+    socket.on('scan.progress', (payload: ScanProgress) => {
+      setScanProgress(payload);
+
+      const previousStatus = lastScanStatusRef.current;
+      if (previousStatus !== 'completed' && payload.status === 'completed') {
+        setLibraryVersion((prev) => prev + 1);
+      }
+
+      lastScanStatusRef.current = payload.status;
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   const playTrack = (track: Track, newQueue: Track[], startIndex?: number) => {
     setQueue(newQueue);
@@ -124,7 +157,7 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <PlayerContext.Provider value={{ 
-      currentTrack, isPlaying, queue, currentQueueIndex, playCounts, libraryVersion,
+      currentTrack, isPlaying, queue, currentQueueIndex, playCounts, libraryVersion, scanProgress,
       playTrack, addTracks, addTracksNext, setTrack, removeTrackFromQueue, setTrackPlays, bumpLibraryVersion, togglePlay 
     }}>
       {children}
