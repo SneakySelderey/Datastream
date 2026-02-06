@@ -50,7 +50,6 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
 
   const handleRescan = async () => {
     if (isRescanning) return;
-    setIsRescanMenuOpen(false);
     setIsRescanRequestInFlight(true);
     try {
       await fetch('/api/scanner/rescan', { method: 'POST' });
@@ -104,15 +103,6 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
       </div>
 
       <div className='flex items-center gap-6'>
-        {scanProgress.status === 'running' && (
-          <span className='hidden md:inline text-sm text-fg/80'>
-            {t('scanProgress', {
-              scanned: scanProgress.foldersScanned,
-              total: scanProgress.totalFolders,
-            })}
-          </span>
-        )}
-
         <button
           onClick={onChangeTheme}
           title={t('changeTheme')}
@@ -139,6 +129,15 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
               >
                 {t('rescan')}
               </button>
+
+              {scanProgress.status === 'running' && (
+                <p className='mb-3 text-sm text-fg/80'>
+                  {t('scanProgress', {
+                    scanned: scanProgress.foldersScanned,
+                    total: scanProgress.totalFolders,
+                  })}
+                </p>
+              )}
 
               <div className='text-sm space-y-1 text-fg/80'>
                 <p>{t('lastRescanTime')}: {formatLastRescanTime()}</p>
