@@ -88,6 +88,55 @@ export class TracksService {
       };
     }
 
+    if (order === 'recently-played') {
+      const [tracks, allGenres, allTracksDates] = await Promise.all([
+        this.prisma.track.findMany({
+          where,
+          include,
+        }),
+        this.prisma.genre.findMany({ select: { name: true } }),
+        this.prisma.track.findMany({
+          select: { date: true },
+          distinct: ['date'],
+          where: { date: { not: null } },
+        }),
+      ]);
+
+      const sorted = tracks
+        .map((track) => {
+          const { playStats, ...rest } = track;
+          return {
+            ...rest,
+            plays: playStats?.[0]?.plays ?? 0,
+            lastPlayedAt: playStats?.[0]?.updatedAt ?? null,
+          };
+        })
+        .sort((a, b) => {
+          const aPlayed = a.lastPlayedAt ? a.lastPlayedAt.getTime() : 0;
+          const bPlayed = b.lastPlayedAt ? b.lastPlayedAt.getTime() : 0;
+
+          if (aPlayed !== bPlayed) return bPlayed - aPlayed;
+          return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+        });
+
+      const data = sorted
+        .slice(skip, skip + Number(limit))
+        .map(({ lastPlayedAt, ...track }) => track);
+
+      const uniqueYears = [...new Set(
+        allTracksDates.map(t => t.date?.substring(0, 4)).filter(Boolean)
+      )].sort().reverse();
+
+      return {
+        data,
+        total: sorted.length,
+        meta: {
+          genres: allGenres.map(g => g.name),
+          years: uniqueYears,
+        },
+      };
+    }
+
     if (order === 'random') {
       const [tracks, allGenres, allTracksDates] = await Promise.all([
         this.prisma.track.findMany({
