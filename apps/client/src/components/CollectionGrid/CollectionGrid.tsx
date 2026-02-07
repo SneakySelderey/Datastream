@@ -11,7 +11,7 @@ interface CollectionGridProps<T extends { id: string }> {
 
 const DEFAULT_PREFERRED_ROWS = 3;
 const DEFAULT_MIN_ITEM_SIZE = 180;
-const DEFAULT_MAX_ITEM_SIZE = 300;
+const DEFAULT_MAX_ITEM_SIZE = 270;
 const DEFAULT_GAP = 4;
 
 const CollectionGrid = <T extends { id: string }>({
@@ -89,7 +89,7 @@ const CollectionGrid = <T extends { id: string }>({
   return (
     <div
       ref={containerRef}
-      className="mt-5 grid justify-center"
+      className={'mt-5 grid justify-start'}
       style={{
         gridTemplateColumns: `repeat(${columns}, minmax(0, ${itemSize}px))`,
         gap: `${gap}px`,
