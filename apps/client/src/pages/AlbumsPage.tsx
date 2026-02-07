@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAlbums } from '../hooks/useAlbums';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import CollectionGrid from '../components/CollectionGrid/CollectionGrid';
@@ -13,7 +13,6 @@ import Filters from '../components/Filters';
 import { type Album, type FilterState, type OrderMode } from '../types';
 
 const AlbumsPage = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -26,21 +25,32 @@ const AlbumsPage = () => {
     genre: searchParams.get('genre') || '',
     year: '',
   });
+  
+  const debouncedSearch = useDebouncedValue(filters.search);
+  const effectiveFilters = useMemo(
+    () => ({ ...filters, search: debouncedSearch }),
+    [filters, debouncedSearch],
+  );
 
   const orderMode = (searchParams.get('order') as OrderMode) || 'default';
-  
-  const { albums, total, isLoading, error, availableGenres, availableYears } = useAlbums(currentPage, itemsPerPage, filters, orderMode);
+
+  const { albums, total, isLoading, error, availableGenres, availableYears } = useAlbums(
+    currentPage,
+    itemsPerPage,
+    effectiveFilters,
+    orderMode,
+  );
 
   useEffect(() => {
     const params: Record<string, string> = {};
     if (orderMode) params.order = orderMode;
 
-    if (filters.genre) params.genre = filters.genre;
-    if (filters.search) params.search = filters.search;
-    if (filters.year) params.year = filters.year;
+    if (effectiveFilters.genre) params.genre = effectiveFilters.genre;
+    if (effectiveFilters.search) params.search = effectiveFilters.search;
+    if (effectiveFilters.year) params.year = effectiveFilters.year;
     
     setSearchParams(params, { replace: true });
-  }, [filters, orderMode, setSearchParams]);
+  }, [effectiveFilters, orderMode, setSearchParams]);
 
   const handleOrderChange = (newOrder: string) => {
     setSearchParams(prev => {

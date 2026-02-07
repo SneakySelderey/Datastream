@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { usePlaylists } from '../hooks/usePlaylists';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import CollectionGrid from '../components/CollectionGrid/CollectionGrid';
@@ -21,15 +22,16 @@ const PlaylistsPage = () => {
   const [itemsPerPage, setItemsPerPage] = useLocalStorage<number>('playlistsPerPage', 18);
 
   const [search, setSearch] = useState(searchParams.get('search') || '');
+  const debouncedSearch = useDebouncedValue(search);
   
-  const { playlists, total, isLoading, error } = usePlaylists(currentPage, itemsPerPage, search);
+  const { playlists, total, isLoading, error } = usePlaylists(currentPage, itemsPerPage, debouncedSearch);
 
   useEffect(() => {
     const params: Record<string, string> = {};
-    if (search) params.search = search;
+    if (debouncedSearch) params.search = debouncedSearch;
     
     setSearchParams(params, { replace: true });
-  }, [search, setSearchParams]);
+  }, [debouncedSearch, setSearchParams]);
 
   const handleSearchChange = (val: string) => {
     setSearch(val);

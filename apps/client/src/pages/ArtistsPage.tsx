@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useArtists } from '../hooks/useArtists';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 import ArtistList from '../components/ArtistList';
@@ -20,18 +21,24 @@ const ArtistsPage = () => {
   const [itemsPerPage, setItemsPerPage] = useLocalStorage<number>('artistsPerPage', 20);
 
   const [search, setSearch] = useState(searchParams.get('search') || '');
+  const debouncedSearch = useDebouncedValue(search);
 
   const orderMode = (searchParams.get('order') as OrderMode) || 'default';
   
-  const { artists, total, isLoading, error } = useArtists(currentPage, itemsPerPage, search, orderMode);
+  const { artists, total, isLoading, error } = useArtists(
+    currentPage,
+    itemsPerPage,
+    debouncedSearch,
+    orderMode,
+  );
 
   useEffect(() => {
     const params: Record<string, string> = {};
     if (orderMode && orderMode !== 'default') params.order = orderMode;
-    if (search) params.search = search;
+    if (debouncedSearch) params.search = debouncedSearch;
     
     setSearchParams(params, { replace: true });
-  }, [search, orderMode, setSearchParams]);
+  }, [debouncedSearch, orderMode, setSearchParams]);
 
   const handleSearchChange = (val: string) => {
     setSearch(val);

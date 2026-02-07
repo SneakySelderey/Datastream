@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { useTracks } from '../hooks/useTracks';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { usePlayer } from '../context/PlayerContext';
 
@@ -13,7 +13,6 @@ import Filters from '../components/Filters';
 import { type FilterState, type OrderMode } from '../types';
 
 const TracksPage = () => {
-  const { t } = useTranslation();
   const { playTrack } = usePlayer();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -26,10 +25,21 @@ const TracksPage = () => {
     genre: searchParams.get('genre') || '',
     year: searchParams.get('year') || '',
   });
+  
+  const debouncedSearch = useDebouncedValue(filters.search);
+  const effectiveFilters = useMemo(
+    () => ({ ...filters, search: debouncedSearch }),
+    [filters, debouncedSearch],
+  );
 
   const orderMode = (searchParams.get('order') as OrderMode) || 'default';
-  
-  const { tracks, total, isLoading, error, availableGenres, availableYears } = useTracks(currentPage, itemsPerPage, filters, orderMode);
+
+  const { tracks, total, isLoading, error, availableGenres, availableYears } = useTracks(
+    currentPage,
+    itemsPerPage,
+    effectiveFilters,
+    orderMode,
+  );
 
   const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>([]);
 
@@ -37,12 +47,12 @@ const TracksPage = () => {
     const params: Record<string, string> = {};
     if (orderMode && orderMode !== 'default') params.order = orderMode;
 
-    if (filters.genre) params.genre = filters.genre;
-    if (filters.search) params.search = filters.search;
-    if (filters.year) params.year = filters.year;
+    if (effectiveFilters.genre) params.genre = effectiveFilters.genre;
+    if (effectiveFilters.search) params.search = effectiveFilters.search;
+    if (effectiveFilters.year) params.year = effectiveFilters.year;
     
     setSearchParams(params, { replace: true });
-  }, [filters, orderMode, setSearchParams]);
+  }, [effectiveFilters, orderMode, setSearchParams]);
 
   const handleOrderChange = (newOrder: string) => {
     setSearchParams(prev => {
