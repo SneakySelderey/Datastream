@@ -4,10 +4,11 @@ services:
       context: ./apps/server
       dockerfile: Dockerfile
     environment:
-      JWT_SECRET: ${JWT_SECRET:-datastream-secret-key}
+      JWT_SECRET: ${JWT_SECRET:-SUPER_SECRET_KEY}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     volumes:
       - datastream_db:/data
-      - ./apps/server/temp-music-dir:/music:ro
+      - ${MUSIC_HOST_PATH:-./apps/server/temp-music-dir}:/music:ro
     restart: unless-stopped
     networks:
       - datastream
@@ -19,7 +20,7 @@ services:
     depends_on:
       - server
     ports:
-      - "${CLIENT_PORT:-8085}:80"
+      - "${CLIENT_PORT:-8080}:80"
     restart: unless-stopped
     networks:
       - datastream
