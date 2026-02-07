@@ -54,6 +54,30 @@ const Player: React.FC = () => {
     }
   }, [volume]);
 
+  useEffect(() => {
+    const isInteractiveTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      if (target.isContentEditable) return true;
+
+      return ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== 'Space' && event.key !== ' ') return;
+      if (event.repeat) return;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (isInteractiveTarget(event.target)) return;
+
+      event.preventDefault();
+      togglePlay();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [togglePlay]);
+
   const handlePrev = () => {
     if (hasPrev) {
       setTrack(queue[currentQueueIndex - 1], currentQueueIndex - 1);
