@@ -98,6 +98,70 @@ export class AlbumsService {
       };
     }
 
+    if (order === 'recently-played') {
+      const [albums, allGenres, allAlbumsDates] = await Promise.all([
+        this.prisma.album.findMany({
+          where,
+          include: {
+            artists: true,
+            tracks: {
+              select: {
+                coverPath: true,
+                playStats: {
+                  where: { userId },
+                  select: { updatedAt: true },
+                },
+              },
+              orderBy: { number: 'asc' },
+            },
+          },
+        }),
+        this.prisma.genre.findMany({ select: { name: true } }),
+        this.prisma.album.findMany({
+          select: { date: true },
+          distinct: ['date'],
+          where: { date: { not: null } },
+        }),
+      ]);
+
+      const withLastPlayed = albums.map((album) => {
+        const lastPlayedAt = album.tracks.reduce<Date | null>((latest, track) => {
+          const playedAt = track.playStats[0]?.updatedAt ?? null;
+          if (!playedAt) return latest;
+          if (!latest || playedAt > latest) return playedAt;
+          return latest;
+        }, null);
+
+        const coverPath = album.tracks.find((track) => track.coverPath)?.coverPath ?? null;
+        return { ...album, coverPath, lastPlayedAt };
+      });
+
+      const sorted = withLastPlayed.sort((a, b) => {
+        const aPlayed = a.lastPlayedAt ? a.lastPlayedAt.getTime() : 0;
+        const bPlayed = b.lastPlayedAt ? b.lastPlayedAt.getTime() : 0;
+
+        if (aPlayed !== bPlayed) return bPlayed - aPlayed;
+        return a.title.localeCompare(b.title);
+      });
+
+      const paged = sorted
+        .slice(skip, skip + Number(limit))
+        .map(({ lastPlayedAt, ...album }) => album);
+
+      const uniqueYears = [...new Set(
+        allAlbumsDates.map(a => a.date?.substring(0, 4)).filter(Boolean)
+      )].sort().reverse();
+
+      return {
+        data: paged,
+        total: sorted.length,
+        meta: {
+          genres: allGenres.map(g => g.name),
+          years: uniqueYears,
+        },
+      };
+    }
+
     if (order === 'random') {
       const [albums, allGenres, allAlbumsDates] = await Promise.all([
         this.prisma.album.findMany({
