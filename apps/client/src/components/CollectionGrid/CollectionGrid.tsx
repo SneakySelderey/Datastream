@@ -6,13 +6,14 @@ interface CollectionGridProps<T extends { id: string }> {
   preferredRows?: number;
   minItemSize?: number;
   maxItemSize?: number;
+  itemsPerPage?: number;
   gap?: number;
 }
 
 const DEFAULT_PREFERRED_ROWS = 3;
 const DEFAULT_MIN_ITEM_SIZE = 180;
 const DEFAULT_MAX_ITEM_SIZE = 270;
-const DEFAULT_GAP = 4;
+const DEFAULT_GAP = 0;
 
 const CollectionGrid = <T extends { id: string }>({
   items,
@@ -20,6 +21,7 @@ const CollectionGrid = <T extends { id: string }>({
   preferredRows = DEFAULT_PREFERRED_ROWS,
   minItemSize = DEFAULT_MIN_ITEM_SIZE,
   maxItemSize = DEFAULT_MAX_ITEM_SIZE,
+  itemsPerPage,
   gap = DEFAULT_GAP,
 }: CollectionGridProps<T>) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -38,22 +40,23 @@ const CollectionGrid = <T extends { id: string }>({
     }
 
     const totalItems = Math.max(items.length, 1);
-    let rows = Math.min(preferredRows, totalItems);
+    const layoutItems = Math.max(totalItems, itemsPerPage ?? totalItems);
+    let rows = Math.min(preferredRows, layoutItems);
 
     const computeItemSize = (cols: number) => (width - gap * (cols - 1)) / cols;
 
-    let nextColumns = Math.ceil(totalItems / rows);
+    let nextColumns = Math.ceil(layoutItems / rows);
     let nextItemSize = computeItemSize(nextColumns);
 
     while (nextItemSize > maxItemSize && rows > 1) {
       rows -= 1;
-      nextColumns = Math.ceil(totalItems / rows);
+      nextColumns = Math.ceil(layoutItems / rows);
       nextItemSize = computeItemSize(nextColumns);
     }
 
-    while (nextItemSize < minItemSize && rows < totalItems) {
+    while (nextItemSize < minItemSize && rows < layoutItems) {
       rows += 1;
-      nextColumns = Math.ceil(totalItems / rows);
+      nextColumns = Math.ceil(layoutItems / rows);
       nextItemSize = computeItemSize(nextColumns);
     }
 
@@ -61,9 +64,9 @@ const CollectionGrid = <T extends { id: string }>({
     const minAllowedSize = Math.min(minItemSize, maxAllowedSize);
     const boundedItemSize = Math.min(Math.max(nextItemSize, minAllowedSize), maxAllowedSize);
 
-    setColumns(nextColumns);
+    setColumns(Math.min(nextColumns, totalItems));
     setItemSize(boundedItemSize);
-  }, [gap, items.length, maxItemSize, minItemSize, preferredRows]);
+  }, [gap, items.length, maxItemSize, itemsPerPage, minItemSize, preferredRows]);
 
   useEffect(() => {
     calculateLayout();

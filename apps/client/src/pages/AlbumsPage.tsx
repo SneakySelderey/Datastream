@@ -106,6 +106,7 @@ const AlbumsPage = () => {
         <div className={`transition-opacity duration-200 ${isLoading ? 'opacity-60' : 'opacity-100'}`}>
           <CollectionGrid
             items={albums}
+            itemsPerPage={itemsPerPage}
             renderItem={(album) => (
               <AlbumCard album={album} onSelect={handleSelectAlbum} />
             )}
