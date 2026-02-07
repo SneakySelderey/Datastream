@@ -27,3 +27,4 @@ dist-ssr
 covers
 temp-music-dir
 .env
+./apps/server/.env
