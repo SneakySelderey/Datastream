@@ -9,7 +9,7 @@ import { ScannerGateway, type ScanProgressPayload } from './scanner.gateway';
 @Injectable()
 export class ScannerService implements OnModuleInit {
   private readonly logger = new Logger(ScannerService.name);
-  private musicPath = process.env.MUSIC_PATH;
+  private musicPath = process.env.MUSIC_PATH ?? '/music';
   private coversCachePath = path.join(process.cwd(), 'covers');
   private isScanning = false;
 

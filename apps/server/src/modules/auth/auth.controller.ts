@@ -12,6 +12,10 @@ import { type Response, type Request } from 'express';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  private resolveSecureCookie() {
+    return process.env.COOKIE_SECURE === 'true';
+  }
+
   @Public()
   @Post('register')
   async create(@Body() createAuthDto: CreateAuthDto, @Res({ passthrough: true }) res: Response) {
@@ -22,9 +26,11 @@ export class AuthController {
       password: createAuthDto.password,
     });
 
+    const secureCookie = this.resolveSecureCookie();
+
     res.cookie('access_token', loginResult.access_token, {
       httpOnly: true,
-      secure: false,
+      secure: secureCookie,
       sameSite: 'lax',
       expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     });
@@ -36,10 +42,11 @@ export class AuthController {
   @Post('login')
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(loginDto);
+    const secureCookie = this.resolveSecureCookie();
 
     res.cookie('access_token', result.access_token, {
       httpOnly: true,
-      secure: false,
+      secure: secureCookie,
       sameSite: 'lax',
       expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });

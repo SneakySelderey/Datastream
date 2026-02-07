@@ -23,8 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-migrations
-
 *.db
 covers
 temp-music-dir
