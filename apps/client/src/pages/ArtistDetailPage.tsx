@@ -21,7 +21,7 @@ const ArtistDetailsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useLocalStorage<number>('artistAlbumsPerPage', 18);
 
-  const { artist, isLoading: isArtistLoading, error: artistError } = useArtist(artistId || '');
+  const { artist, isLoading: isArtistLoading } = useArtist(artistId || '');
 
   const { albums, total, isLoading, error } = useAlbums(
     currentPage, 
