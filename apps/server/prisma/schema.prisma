@@ -56,6 +56,11 @@ model Track {
   metadataChecksum String?
   
   artists      Artist[]
+
+  replayGainTrack Float?
+  replayGainAlbum Float?
+  replayPeakTrack Float?
+  replayPeakAlbum Float?
   
   albumId     String?
   album       Album?   @relation(fields: [albumId], references: [id])

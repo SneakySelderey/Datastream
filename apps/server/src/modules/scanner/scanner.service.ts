@@ -65,6 +65,10 @@ export class ScannerService implements OnModuleInit {
     nativeAlbumArtistTags: string[];
     genres: string[];
     albumTitle: string;
+    replayGainTrack: number | null;
+    replayGainAlbum: number | null;
+    replayPeakTrack: number | null;
+    replayPeakAlbum: number | null;
   }) {
     return crypto
       .createHash('md5')
@@ -140,6 +144,31 @@ export class ScannerService implements OnModuleInit {
     });
 
     return values;
+  }
+
+  private parseNumericTagValue(value: string | number | null | undefined): number | null {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+
+    const normalized = String(value).replace(',', '.');
+    const match = normalized.match(/-?\d+(\.\d+)?/);
+    if (!match) return null;
+
+    const parsed = Number.parseFloat(match[0]);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private getReplayGainValue(metadata: any, commonValue: unknown, nativeTagIds: string[]): number | null {
+    const fromCommon = this.parseNumericTagValue(commonValue as string | number | null | undefined);
+    if (fromCommon !== null) return fromCommon;
+
+    const nativeValues = this.getNativeTagValues(metadata, nativeTagIds);
+    for (const nativeValue of nativeValues) {
+      const parsed = this.parseNumericTagValue(nativeValue);
+      if (parsed !== null) return parsed;
+    }
+
+    return null;
   }
 
   private async pruneUnusedCovers() {
@@ -261,6 +290,18 @@ export class ScannerService implements OnModuleInit {
           const albumDate = albumYear ?? releaseDate;
 
           const coverFilename = this.saveCover(common.picture?.[0]);
+          const replayGainTrack = this.getReplayGainValue(metadata, c.replaygain_track_gain, [
+            'REPLAYGAIN_TRACK_GAIN',
+          ]);
+          const replayGainAlbum = this.getReplayGainValue(metadata, c.replaygain_album_gain, [
+            'REPLAYGAIN_ALBUM_GAIN',
+          ]);
+          const replayPeakTrack = this.getReplayGainValue(metadata, c.replaygain_track_peak, [
+            'REPLAYGAIN_TRACK_PEAK',
+          ]);
+          const replayPeakAlbum = this.getReplayGainValue(metadata, c.replaygain_album_peak, [
+            'REPLAYGAIN_ALBUM_PEAK',
+          ]);
 
           const metadataChecksum = this.buildMetadataChecksum({
             title: common.title || null,
@@ -278,6 +319,10 @@ export class ScannerService implements OnModuleInit {
             nativeAlbumArtistTags: this.normalizeArtists(nativeAlbumArtists),
             genres,
             albumTitle,
+            replayGainTrack,
+            replayGainAlbum,
+            replayPeakTrack,
+            replayPeakAlbum,
           });
 
           const exists = await this.prisma.track.findUnique({ where: { filePath } });
@@ -342,6 +387,10 @@ export class ScannerService implements OnModuleInit {
                 coverPath: coverFilename,
                 format: format.container || 'unknown',
                 date: releaseDate,
+                replayGainTrack,
+                replayGainAlbum,
+                replayPeakTrack,
+                replayPeakAlbum,
                 metadataChecksum,
                 album: { connect: { id: album.id } },
                 genres: {
@@ -367,6 +416,10 @@ export class ScannerService implements OnModuleInit {
                 coverPath: coverFilename,
                 format: format.container || 'unknown',
                 date: releaseDate,
+                replayGainTrack,
+                replayGainAlbum,
+                replayPeakTrack,
+                replayPeakAlbum,
                 metadataChecksum,
                 album: { connect: { id: album.id } },
                 genres: {

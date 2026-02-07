@@ -27,6 +27,28 @@ const Player: React.FC = () => {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const getReplayGainFactor = () => {
+    const gainDb = currentTrack.replayGainTrack ?? currentTrack.replayGainAlbum ?? 0;
+    const peak = currentTrack.replayPeakTrack ?? currentTrack.replayPeakAlbum ?? null;
+
+    const gainFactor = Math.pow(10, gainDb / 20);
+    if (!Number.isFinite(gainFactor) || gainFactor <= 0) return 1;
+
+    if (peak && peak > 0) {
+      return Math.min(gainFactor, 1 / peak);
+    }
+
+    return gainFactor;
+  };
+
+  const applyEffectiveVolume = () => {
+    if (!audioRef.current) return;
+
+    const replayGainFactor = getReplayGainFactor();
+    const effectiveVolume = Math.min(1, Math.max(0, volume * replayGainFactor));
+    audioRef.current.volume = effectiveVolume;
+  };
+
   useEffect(() => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -49,10 +71,8 @@ const Player: React.FC = () => {
   }, [currentQueueIndex]);
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  }, [volume]);
+    applyEffectiveVolume();
+  }, [volume, currentTrack]);
 
   useEffect(() => {
     const isInteractiveTarget = (target: EventTarget | null) => {

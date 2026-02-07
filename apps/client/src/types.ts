@@ -30,6 +30,10 @@ export interface Track {
   filePath: string;
   fileName: string;
   format: string;
+  replayGainTrack?: number | null;
+  replayGainAlbum?: number | null;
+  replayPeakTrack?: number | null;
+  replayPeakAlbum?: number | null;
   albumId?: string | null;
   album?: Album | null;
   coverPath?: string | null;
