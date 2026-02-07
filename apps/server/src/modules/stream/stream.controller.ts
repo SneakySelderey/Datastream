@@ -1,7 +1,7 @@
-import { Controller, Get, Param, Res, StreamableFile, NotFoundException, Header } from '@nestjs/common';
+import { Controller, Get, Param, Res, StreamableFile, NotFoundException } from '@nestjs/common';
 import { type Response } from 'express';
 import { createReadStream, existsSync, statSync } from 'fs';
-import { join } from 'path';
+import { extname, join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('stream')
@@ -9,14 +9,16 @@ export class StreamController {
   constructor(private prisma: PrismaService) {}
 
   @Get('cover/:filename')
-  @Header('Content-Type', 'image/jpeg')
-  getCover(@Param('filename') filename: string) {
+  getCover(@Param('filename') filename: string, @Res({ passthrough: true }) res: Response) {
     const path = join(process.cwd(), 'covers', filename);
 
     if (!existsSync(path)) {
       throw new NotFoundException('Cover not found');
     }
-    
+
+    const mimeType = extname(filename).toLowerCase() === '.png' ? 'image/png' : 'image/jpeg';
+    res.setHeader('Content-Type', mimeType);
+
     const file = createReadStream(path);
     return new StreamableFile(file);
   }

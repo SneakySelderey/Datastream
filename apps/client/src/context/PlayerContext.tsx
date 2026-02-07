@@ -64,7 +64,6 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const socket = io('/scanner', {
       path: '/api/socket.io',
-      transports: ['websocket'],
       withCredentials: true,
     });
 

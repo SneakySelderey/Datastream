@@ -28,7 +28,9 @@ export class ScannerService implements OnModuleInit {
       fs.mkdirSync(this.coversCachePath, { recursive: true });
     }
 
-    await this.scanLibrary();
+    void this.scanLibrary().catch((e: Error) => {
+      this.logger.error(`Initial scan failed: ${e.message}`);
+    });
   }
 
   private saveCover(picture: any): string | null {
