@@ -9,7 +9,6 @@ const DEFAULT_FILTERS: FilterState = {
   year: ''
 };
 
-// @ts-ignore
 export const useAlbums = (
   page: number,limit: number, filters: FilterState = DEFAULT_FILTERS,
   orderMode: OrderMode = 'default', artistId: string = ''
