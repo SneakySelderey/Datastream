@@ -11,7 +11,7 @@ interface CollectionGridProps<T extends { id: string }> {
 
 const DEFAULT_PREFERRED_ROWS = 3;
 const DEFAULT_MIN_ITEM_SIZE = 180;
-const DEFAULT_MAX_ITEM_SIZE = 260;
+const DEFAULT_MAX_ITEM_SIZE = 300;
 const DEFAULT_GAP = 4;
 
 const CollectionGrid = <T extends { id: string }>({
@@ -57,8 +57,12 @@ const CollectionGrid = <T extends { id: string }>({
       nextItemSize = computeItemSize(nextColumns);
     }
 
+    const maxAllowedSize = Math.min(maxItemSize, width);
+    const minAllowedSize = Math.min(minItemSize, maxAllowedSize);
+    const boundedItemSize = Math.min(Math.max(nextItemSize, minAllowedSize), maxAllowedSize);
+
     setColumns(nextColumns);
-    setItemSize(nextItemSize);
+    setItemSize(boundedItemSize);
   }, [gap, items.length, maxItemSize, minItemSize, preferredRows]);
 
   useEffect(() => {
