@@ -28,8 +28,8 @@ const TracksPage = () => {
   
   const debouncedSearch = useDebouncedValue(filters.search);
   const effectiveFilters = useMemo(
-    () => ({ ...filters, search: debouncedSearch }),
-    [filters, debouncedSearch],
+    () => ({ search: debouncedSearch, genre: filters.genre, year: filters.year }),
+    [debouncedSearch, filters.genre, filters.year],
   );
 
   const orderMode = (searchParams.get('order') as OrderMode) || 'default';

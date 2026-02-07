@@ -21,15 +21,15 @@ const AlbumsPage = () => {
   const [itemsPerPage, setItemsPerPage] = useLocalStorage<number>('itemsPerPage', 18);
 
   const [filters, setFilters] = useState<FilterState>({
-    search: '',
+    search: searchParams.get('search') || '',
     genre: searchParams.get('genre') || '',
-    year: '',
+    year: searchParams.get('year') || '',
   });
   
   const debouncedSearch = useDebouncedValue(filters.search);
   const effectiveFilters = useMemo(
-    () => ({ ...filters, search: debouncedSearch }),
-    [filters, debouncedSearch],
+    () => ({ search: debouncedSearch, genre: filters.genre, year: filters.year }),
+    [debouncedSearch, filters.genre, filters.year],
   );
 
   const orderMode = (searchParams.get('order') as OrderMode) || 'default';
