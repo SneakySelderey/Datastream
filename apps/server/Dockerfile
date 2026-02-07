@@ -11,6 +11,7 @@ COPY nest-cli.json ./
 COPY tsconfig*.json ./
 COPY src ./src
 
+RUN npx prisma generate
 RUN npm run build
 
 FROM node:22-alpine
