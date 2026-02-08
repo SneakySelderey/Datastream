@@ -22,10 +22,10 @@ const Dropdown: React.FC<DropdownProps> = ({
   };
 
   return (
-    <div className='relative'>
+    <div className='relative w-full max-w-64'>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className='flex items-center justify-between px-4 py-2 bg-bg border border-fg/20 rounded-lg hover:border-fg/50 transition-all'>
+        className='w-full flex items-center justify-between px-4 py-2 bg-bg border border-fg/20 rounded-lg hover:border-fg/50 transition-all'>
 
         <span className="flex items-center gap-2 truncate">
           {selected || placeholder || ''}
@@ -35,15 +35,14 @@ const Dropdown: React.FC<DropdownProps> = ({
       </button>
 
       {isOpen && (
-        <div className='absolute w-full mt-2 bg-bg border border-fg/10 rounded-lg shadow-md z-20'>
+        <div className='absolute mt-2 w-full max-h-64 overflow-y-auto overflow-x-hidden bg-bg border border-fg/10 rounded-lg shadow-md z-20'>
           {options.map((opt) => (
             <button
               key={opt}
               onClick={() => handleOptionClick(opt)}
               className='w-full text-left px-4 py-2 flex gap-2 hover:bg-fg/5 transition-colors'
             >
-
-              <span>{opt}</span>
+              <span className='truncate'>{opt}</span>
             </button>
           ))}
         </div>
