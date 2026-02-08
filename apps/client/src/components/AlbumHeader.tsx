@@ -31,7 +31,11 @@ const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
   const uniqueGenres = Array.from(genreMap.values());
 
   const handleGenreClick = (genre: string) => {
-    navigate(`/albums/all?genre=${encodeURIComponent(genre)}`);
+    const params = new URLSearchParams({
+      genre,
+      order: 'name',
+    });
+    navigate(`/albums?${params.toString()}`);
   };
 
   return (
