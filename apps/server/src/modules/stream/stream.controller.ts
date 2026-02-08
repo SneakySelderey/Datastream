@@ -6,11 +6,13 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('stream')
 export class StreamController {
+  private coversCachePath = '/data/covers';
+
   constructor(private prisma: PrismaService) {}
 
   @Get('cover/:filename')
   getCover(@Param('filename') filename: string, @Res({ passthrough: true }) res: Response) {
-    const path = join(process.cwd(), 'covers', filename);
+    const path = join(this.coversCachePath, filename);
 
     if (!existsSync(path)) {
       throw new NotFoundException('Cover not found');
