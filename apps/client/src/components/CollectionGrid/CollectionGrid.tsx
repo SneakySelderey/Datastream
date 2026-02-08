@@ -10,8 +10,8 @@ interface CollectionGridProps<T extends { id: string }> {
   gap?: number;
 }
 
-const DEFAULT_PREFERRED_ROWS = 3;
-const DEFAULT_MIN_ITEM_SIZE = 180;
+const DEFAULT_PREFERRED_ROWS = 4;
+const DEFAULT_MIN_ITEM_SIZE = 230;
 const DEFAULT_MAX_ITEM_SIZE = 270;
 const DEFAULT_GAP = 0;
 
