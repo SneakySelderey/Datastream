@@ -21,7 +21,7 @@ const ArtistDetailsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useLocalStorage<number>('artistAlbumsPerPage', 18);
 
-  const { artist, isLoading: isArtistLoading } = useArtist(artistId || '');
+  const { artist, error: artistError } = useArtist(artistId || '');
 
   const { albums, total, isLoading, error } = useAlbums(
     currentPage, 
@@ -31,8 +31,8 @@ const ArtistDetailsPage = () => {
     artistId
   );
 
-  if (!artist) {
-    return <div className="p-8">{t('nothingFound')}</div>;
+  if (artistError) {
+    return <div className="p-8">{t('error')}: {artistError}</div>;
   }
 
   const handleItemsPerPageChange = (newLimit: number) => {
@@ -47,9 +47,7 @@ const ArtistDetailsPage = () => {
   return (
     <div className='m-5'>
       <div className="mb-8">
-        {!isArtistLoading && (
-            <h1 className="text-3xl font-bold">{artist?.name}</h1>
-        )}
+        <h1 className="text-3xl font-bold">{artist?.name}</h1>
         
         <p className="mt-2">{t('artistDiscography', 'Discography')}</p>
       </div>
