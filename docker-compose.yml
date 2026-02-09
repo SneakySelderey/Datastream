@@ -1,0 +1,33 @@
+services:
+  server:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-SUPER_SECRET_KEY}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    volumes:
+      - datastream_db:/data
+      - ${MUSIC_HOST_PATH:-./apps/server/temp-music-dir}:/music:ro
+    restart: unless-stopped
+    networks:
+      - datastream
+
+  client:
+    build:
+      context: ./apps/client
+      dockerfile: Dockerfile
+    depends_on:
+      - server
+    ports:
+      - "${CLIENT_PORT:-8080}:80"
+    restart: unless-stopped
+    networks:
+      - datastream
+
+networks:
+  datastream:
+    driver: bridge
+
+volumes:
+  datastream_db:

@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: white;
+  --color-accent: #f1f2f4;
+  --color-fg: black;
+  --color-hv: #e0e0e0;
+  --color-link: #3f51b5;
+}
+
+@layer base {
+  .dark {
+    --color-bg: #3f3f3f;
+    --color-accent: #4f4f4f;
+    --color-fg: white;
+    --color-hv: #747474;
+    --color-link: #2b8cdb;
+  }
+}
+
+@layer utilities {
+  @keyframes fade-in-soft {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-soft {
+    animation: fade-in-soft 320ms ease-out;
+  }
+}

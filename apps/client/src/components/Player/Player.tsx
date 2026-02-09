@@ -1,0 +1,300 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+
+import { usePlayer } from '../../context/PlayerContext';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
+
+import PlayIcon from '../../assets/play.svg?react';
+import PauseIcon from '../../assets/pause.svg?react';
+import VolumeIcon from '../../assets/volume-full.svg?react';
+import SkipBackwardIcon from '../../assets/skip-backward.svg?react';
+import SkipForwardIcon from '../../assets/skip-forward.svg?react';
+import PlaylistsIcon from '../../assets/playlists.svg?react';
+
+import PlayQueue from './PlayQueue';
+import { buildCoverUrl, buildTrackUrl, formatTime } from '../../types';
+
+const Player: React.FC = () => {
+  const { currentTrack, isPlaying, queue, currentQueueIndex, togglePlay, setTrack, setTrackPlays, removeTrackFromQueue } = usePlayer();
+
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(0);
+  const [volume, setVolume] = useLocalStorage<number>('player-volume', 0.5);
+  const [isQueueOpen, setIsQueueOpen] = useState(false);
+
+  const hasPrev = currentQueueIndex > 0;
+  const hasNext = currentQueueIndex !== -1 && currentQueueIndex < queue.length - 1;
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const getReplayGainFactor = () => {
+    const gainDb = currentTrack.replayGainTrack ?? currentTrack.replayGainAlbum ?? 0;
+    const peak = currentTrack.replayPeakTrack ?? currentTrack.replayPeakAlbum ?? null;
+
+    const gainFactor = Math.pow(10, gainDb / 20);
+    if (!Number.isFinite(gainFactor) || gainFactor <= 0) return 1;
+
+    if (peak && peak > 0) {
+      return Math.min(gainFactor, 1 / peak);
+    }
+
+    return gainFactor;
+  };
+
+  const applyEffectiveVolume = () => {
+    if (!audioRef.current) return;
+
+    const replayGainFactor = getReplayGainFactor();
+    const effectiveVolume = Math.min(1, Math.max(0, volume * replayGainFactor));
+    audioRef.current.volume = effectiveVolume;
+  };
+
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.play().catch(error => console.error("Playback error:", error));
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [isPlaying, currentTrack]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    audioRef.current.currentTime = 0;
+    setCurrentTime(0);
+
+    if (isPlaying) {
+      audioRef.current.play().catch(error => console.error("Playback error:", error));
+    }
+  }, [currentQueueIndex]);
+
+  useEffect(() => {
+    applyEffectiveVolume();
+  }, [volume, currentTrack]);
+
+  useEffect(() => {
+    const isInteractiveTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      if (target.isContentEditable) return true;
+
+      return ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== 'Space' && event.key !== ' ') return;
+      if (event.repeat) return;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (isInteractiveTarget(event.target)) return;
+
+      event.preventDefault();
+      togglePlay();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [togglePlay]);
+
+  const handlePrev = () => {
+    if (hasPrev) {
+      setTrack(queue[currentQueueIndex - 1], currentQueueIndex - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (hasNext) {
+      setTrack(queue[currentQueueIndex + 1], currentQueueIndex + 1);
+    }
+  };
+
+  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLAudioElement>) => {
+    setCurrentTime(e.currentTarget.currentTime);
+  };
+
+  const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLAudioElement>) => {
+    setDuration(e.currentTarget.duration);
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (audioRef.current) {
+      const newTime = parseFloat(e.target.value);
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleTrackEnded = async () => {
+    if (currentTrack.id && currentTrack.id !== '0') {
+      try {
+        const response = await fetch(`/api/tracks/${currentTrack.id}/plays`, { method: 'POST' });
+        if (response.ok) {
+          const payload = await response.json();
+          
+          setTrackPlays(payload.trackId, payload.plays);
+        }
+      } catch (e) {
+        console.error('Failed to increment play count', e);
+      }
+    }
+
+    if (hasNext) handleNext();
+    else togglePlay();
+  };
+  
+  const clampedCurrentTime =
+    duration > 0 ? Math.min(Math.max(currentTime, 0), duration) : 0;
+
+  const progress =
+    duration > 0
+      ? Math.min(100, Math.max(0, (clampedCurrentTime / duration) * 100))
+      : 0;
+  const volumeProgress = Math.min(100, Math.max(0, volume * 100));
+    
+  if (!currentTrack) return null;
+
+  const albumTitle = currentTrack.album?.title ?? '—';
+  const coverUrl = buildCoverUrl(currentTrack.coverPath);
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 p-3 bg-accent text-fg z-50 transition-colors duration-300 ease-in-out">
+      {isQueueOpen && (
+        <PlayQueue
+          queue={queue}
+          currentQueueIndex={currentQueueIndex}
+          onPlayTrack={setTrack}
+          onRemoveTrack={removeTrackFromQueue}
+          onClose={() => setIsQueueOpen(false)}
+        />
+      )}
+
+      <audio
+        ref={audioRef}
+        src={buildTrackUrl(currentTrack.id)}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleTrackEnded}
+      />
+
+      <div className="flex items-center gap-5">
+        <img src={coverUrl ?? ''} alt={currentTrack.title} className="w-16 h-16 rounded hidden md:block" />
+
+        <div className='flex-col w-full truncate'>
+          <div>
+            <p className="font-bold">{currentTrack.title}</p>
+
+            <div className="truncate">
+              {currentTrack.artists && currentTrack.artists.length > 0 ? (
+                <span className="text-link">
+                  {currentTrack.artists.map((artist, artistIndex) => (
+                    <span key={artist.id ?? `${currentTrack.id}-artist-${artistIndex}`}>
+                      {artist.id ? (
+                        <Link
+                          to={`/artists/${artist.id}`}
+                          className="hover:underline hover:text-primary transition-colors"
+                        >
+                          {artist.name}
+                        </Link>
+                      ) : (
+                        <span className="text-fg/70">{artist.name}</span>
+                      )}
+                      {artistIndex < (currentTrack.artists?.length ?? 0) - 1 && <span>, </span>}
+                    </span>
+                  ))}
+                </span>
+              ) : (
+                <span className="text-fg/70">—</span>
+              )}
+              <span className="mx-1">&bull;</span>
+              {currentTrack.albumId ? (
+                <Link 
+                  to={`/albums/${currentTrack.albumId}`}
+                  className="text-link hover:underline hover:text-primary transition-colors"
+                >
+                  {albumTitle}
+                </Link>
+              ) : (
+                <span className="text-fg/70">{albumTitle}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="w-full flex items-center gap-2">
+            <span className="text-sm text-right">{formatTime(currentTime)}</span>
+            
+            <input
+              type="range"
+              min={0}
+              max={duration || 0}
+              step={0.01}
+              value={clampedCurrentTime}
+              onChange={handleSeek}
+              className="w-full h-1 bg-gray-400 rounded-lg appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right,
+                #3b82f6 0%,
+                #3b82f6 ${progress}%,
+                #9ca3af ${progress}%,
+                #9ca3af 100%
+                )`,
+              }}
+              />
+
+            <span className="text-sm w-10 text-left">{formatTime(duration)}</span>
+          </div>
+        </div>
+
+        <button onClick={() => setIsQueueOpen(!isQueueOpen)} title="Play Queue">
+          <PlaylistsIcon className='w-8 h-8 cursor-pointer fill-current' />
+        </button>
+
+        <button onClick={handlePrev} disabled={!hasPrev}>
+          <SkipBackwardIcon className='w-8 h-8 cursor-pointer fill-current' />
+        </button>
+
+        <button onClick={togglePlay}>
+          {isPlaying ? (
+            <PauseIcon className='w-6 h-6 cursor-pointer fill-current' />
+          ) : (
+            <PlayIcon className='w-6 h-6 cursor-pointer fill-current' />
+          )}
+        </button>
+
+        <button onClick={handleNext} disabled={!hasNext}>
+          <SkipForwardIcon className='w-8 h-8 cursor-pointer fill-current' />
+        </button>
+
+        <div className='hidden md:flex items-center gap-2'>
+          <VolumeIcon className="w-6 h-6 fill-current" />
+
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={volume}
+            onChange={handleVolumeChange}
+            className="w-24 h-1 bg-gray-400 rounded-lg appearance-none cursor-pointer"
+            style={{
+              background: `linear-gradient(to right,
+              #3b82f6 0%,
+              #3b82f6 ${volumeProgress}%,
+              #9ca3af ${volumeProgress}%,
+              #9ca3af 100%
+              )`,
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Player;

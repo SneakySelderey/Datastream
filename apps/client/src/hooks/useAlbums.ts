@@ -1,0 +1,78 @@
+import { useState, useEffect, useRef } from 'react';
+
+import { type Album, type FilterState, type OrderMode } from '../types';
+import { usePlayer } from '../context/PlayerContext';
+
+const DEFAULT_FILTERS: FilterState = {
+  search: '',
+  genre: '',
+  year: ''
+};
+
+export const useAlbums = (
+  page: number,limit: number, filters: FilterState = DEFAULT_FILTERS,
+  orderMode: OrderMode = 'default', artistId: string = ''
+) => {
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [total, setTotal] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const { libraryVersion } = usePlayer();
+  const [availableGenres, setAvailableGenres] = useState<string[]>([]);
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
+  const randomSeedRef = useRef<string>(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const prevOrderModeRef = useRef<OrderMode>(orderMode);
+
+  useEffect(() => {
+    if (prevOrderModeRef.current !== 'random' && orderMode === 'random') {
+      randomSeedRef.current = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    prevOrderModeRef.current = orderMode;
+  }, [orderMode]);
+
+  useEffect(() => {
+    const fetchAlbums = async () => {
+      setIsLoading(true);
+
+      try {
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+            search: filters.search || '',
+            genre: filters.genre || '',
+            year: filters.year || '',
+            artistId: artistId || '',
+            order: orderMode
+        });
+
+        if (orderMode === 'random') {
+          params.set('randomSeed', randomSeedRef.current);
+        }
+
+        const response = await fetch(`/api/albums?${params}`);
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch albums');
+        }
+
+        const data = await response.json();
+
+        setAlbums(data.data ?? []);
+        setTotal(data.total ?? 0);
+        setAvailableGenres(data.meta?.genres ?? []);
+        setAvailableYears(data.meta?.years ?? []);
+      } catch (e) {
+        setError('Cannot load albums.');
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAlbums();
+
+  }, [page, limit, filters, orderMode, artistId, libraryVersion]);
+
+  return { albums, total, isLoading, error, availableGenres, availableYears };
+};

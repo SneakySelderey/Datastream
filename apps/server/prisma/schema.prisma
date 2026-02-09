@@ -1,0 +1,116 @@
+generator client {
+  provider    = "prisma-client-js"
+  engineType  = "client"
+
+}
+
+datasource db {
+  provider    = "sqlite"
+}
+
+model Artist {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  albums    Album[]
+  tracks    Track[]
+  createdAt DateTime @default(now())
+}
+
+model Album {
+  id        String   @id @default(uuid())
+  title     String
+  
+  artists   Artist[]
+  
+  tracks    Track[]
+  
+  date      String?
+  
+  createdAt DateTime @default(now())
+}
+
+model Genre {
+  id     String   @id @default(uuid())
+  name   String   @unique
+  tracks Track[]
+}
+
+model Track {
+  id          String  @id @default(uuid())
+  title       String
+  
+  number      Int?
+  totalNumber Int?
+  discNumber  Int     @default(1)
+  
+  date        String?
+  genres      Genre[]
+  
+  duration    Float
+  bitrate     Int
+  size        Int
+  
+  filePath    String   @unique
+  fileName    String
+  format      String
+  metadataChecksum String?
+  
+  artists      Artist[]
+
+  replayGainTrack Float?
+  replayGainAlbum Float?
+  replayPeakTrack Float?
+  replayPeakAlbum Float?
+  
+  albumId     String?
+  album       Album?   @relation(fields: [albumId], references: [id])
+
+  coverPath   String?
+
+  playlists  Playlist[]
+  playStats  TrackPlay[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id          String    @id @default(uuid())
+
+  name        String    @unique
+  password    String
+
+  playlists   Playlist[]
+  trackPlays  TrackPlay[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model TrackPlay {
+  id        String   @id @default(uuid())
+  userId    String
+  trackId   String
+  plays     Int      @default(0)
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, trackId])
+}
+
+model Playlist {
+  id        String   @id @default(uuid())
+  title     String
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  tracks    Track[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

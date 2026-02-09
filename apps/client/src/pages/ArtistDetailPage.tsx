@@ -1,0 +1,83 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate, useParams } from 'react-router-dom';
+
+import { useAlbums } from '../hooks/useAlbums';
+import { useArtist } from '../hooks/useArtist';
+import { useLocalStorage } from '../hooks/useLocalStorage';
+
+import CollectionGrid from '../components/CollectionGrid/CollectionGrid';
+import AlbumCard from '../components/CollectionGrid/AlbumCard';
+import PaginationControls from '../components/PaginationControls';
+
+import { type Album } from '../types';
+
+const ArtistDetailsPage = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  
+  const { id: artistId } = useParams();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage<number>('artistAlbumsPerPage', 18);
+
+  const { artist, error: artistError } = useArtist(artistId || '');
+
+  const { albums, total, isLoading, error } = useAlbums(
+    currentPage, 
+    itemsPerPage, 
+    undefined,
+    'default', 
+    artistId
+  );
+
+  if (artistError) {
+    return <div className="p-8">{t('error')}: {artistError}</div>;
+  }
+
+  const handleItemsPerPageChange = (newLimit: number) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const handleSelectAlbum = (album: Album) => {
+    navigate(`/albums/${album.id}`);
+  };
+
+  return (
+    <div className='m-5'>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">{artist?.name}</h1>
+        
+        <p className="mt-2">{t('artistDiscography', 'Discography')}</p>
+      </div>
+
+      {error && <p>{error}</p>}
+
+      {!error && albums.length > 0 && (
+        <div className={`transition-opacity duration-200 ${isLoading ? 'opacity-60' : 'opacity-100'}`}>
+          <CollectionGrid
+            items={albums}
+            renderItem={(album) => (
+              <AlbumCard album={album} onSelect={handleSelectAlbum} />
+            )}
+          />
+        </div>
+      )}
+      
+      {!isLoading && !error && albums.length === 0 && (
+         <p className="mt-10 text-center text-fg/50">{t('noAlbumsFound')}</p>
+      )}
+
+      <PaginationControls 
+        totalItems={total}
+        itemsPerPage={itemsPerPage}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={handleItemsPerPageChange}
+      />
+    </div>
+  );
+};
+
+export default ArtistDetailsPage;
