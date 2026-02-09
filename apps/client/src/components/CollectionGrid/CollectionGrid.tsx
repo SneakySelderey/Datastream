@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 interface CollectionGridProps<T extends { id: string }> {
   items: T[];
@@ -28,6 +28,7 @@ const CollectionGrid = <T extends { id: string }>({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [columns, setColumns] = useState(1);
   const [itemSize, setItemSize] = useState(minItemSize);
+  const [isMeasured, setIsMeasured] = useState(false);
 
   const calculateLayout = useCallback(() => {
     const container = containerRef.current;
@@ -63,9 +64,10 @@ const CollectionGrid = <T extends { id: string }>({
 
     setColumns(nextColumns);
     setItemSize(boundedItemSize);
+    setIsMeasured(true);
   }, [gap, items.length, maxItemSize, minItemSize]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     calculateLayout();
   }, [calculateLayout]);
 
@@ -93,6 +95,7 @@ const CollectionGrid = <T extends { id: string }>({
       style={{
         gridTemplateColumns: `repeat(${columns}, minmax(0, ${itemSize}px))`,
         gap: `${gap}px`,
+        visibility: isMeasured ? 'visible' : 'hidden',
       }}
     >
       {items.map((item) => (
