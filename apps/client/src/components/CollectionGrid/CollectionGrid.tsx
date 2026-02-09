@@ -3,25 +3,26 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 interface CollectionGridProps<T extends { id: string }> {
   items: T[];
   renderItem: (item: T) => React.ReactNode;
-  preferredRows?: number;
   minItemSize?: number;
   maxItemSize?: number;
-  itemsPerPage?: number;
   gap?: number;
 }
 
-const DEFAULT_PREFERRED_ROWS = 4;
-const DEFAULT_MIN_ITEM_SIZE = 230;
-const DEFAULT_MAX_ITEM_SIZE = 270;
+const DEFAULT_MIN_ITEM_SIZE = 170;
+const DEFAULT_MAX_ITEM_SIZE = 290;
 const DEFAULT_GAP = 0;
+const BREAKPOINT_COLUMNS = [
+  { minWidth: 1600, columns: 9 },
+  { minWidth: 900, columns: 6 },
+  { minWidth: 640, columns: 4 },
+  { minWidth: 0, columns: 2 },
+];
 
 const CollectionGrid = <T extends { id: string }>({
   items,
   renderItem,
-  preferredRows = DEFAULT_PREFERRED_ROWS,
   minItemSize = DEFAULT_MIN_ITEM_SIZE,
   maxItemSize = DEFAULT_MAX_ITEM_SIZE,
-  itemsPerPage,
   gap = DEFAULT_GAP,
 }: CollectionGridProps<T>) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -40,23 +41,19 @@ const CollectionGrid = <T extends { id: string }>({
     }
 
     const totalItems = Math.max(items.length, 1);
-    const layoutItems = Math.max(totalItems, itemsPerPage ?? totalItems);
-    let rows = Math.min(preferredRows, layoutItems);
-
     const computeItemSize = (cols: number) => (width - gap * (cols - 1)) / cols;
 
-    let nextColumns = Math.ceil(layoutItems / rows);
+    const breakpointColumns = BREAKPOINT_COLUMNS.find((bp) => width >= bp.minWidth)?.columns ?? 2;
+    let nextColumns = Math.min(Math.max(1, breakpointColumns), totalItems);
     let nextItemSize = computeItemSize(nextColumns);
 
-    while (nextItemSize > maxItemSize && rows > 1) {
-      rows -= 1;
-      nextColumns = Math.ceil(layoutItems / rows);
+    while (nextItemSize > maxItemSize && nextColumns < totalItems) {
+      nextColumns += 1;
       nextItemSize = computeItemSize(nextColumns);
     }
 
-    while (nextItemSize < minItemSize && rows < layoutItems) {
-      rows += 1;
-      nextColumns = Math.ceil(layoutItems / rows);
+    while (nextItemSize < minItemSize && nextColumns > 1) {
+      nextColumns -= 1;
       nextItemSize = computeItemSize(nextColumns);
     }
 
@@ -64,9 +61,9 @@ const CollectionGrid = <T extends { id: string }>({
     const minAllowedSize = Math.min(minItemSize, maxAllowedSize);
     const boundedItemSize = Math.min(Math.max(nextItemSize, minAllowedSize), maxAllowedSize);
 
-    setColumns(Math.min(nextColumns, totalItems));
+    setColumns(nextColumns);
     setItemSize(boundedItemSize);
-  }, [gap, items.length, maxItemSize, itemsPerPage, minItemSize, preferredRows]);
+  }, [gap, items.length, maxItemSize, minItemSize]);
 
   useEffect(() => {
     calculateLayout();
