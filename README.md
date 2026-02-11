@@ -5,18 +5,57 @@ This project runs with two containers:
 - `server` (NestJS API + scanner + WebSocket)
 - `client` (built Vite frontend served by Nginx, with reverse proxy to backend for `/api` and `/stream`)
 
-## Configure
+## Installation
 
-Create root `.env` from template:
+Create root `.env`:
 
 ```bash
-cp .env.example .env
+JWT_SECRET=SUPER_SECRET_KEY
+CLIENT_PORT=8080
+MUSIC_HOST_PATH=./apps/server/temp-music-dir
+COOKIE_SECURE=false
+```
+
+Use this `docker-compose.yml`:
+
+```yaml
+services:
+  server:
+    image:
+      sneakyselderey/datastream-server:latest
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-SUPER_SECRET_KEY}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    volumes:
+      - datastream_db:/data
+      - ${MUSIC_HOST_PATH:-./apps/server/temp-music-dir}:/music:ro
+    restart: unless-stopped
+    networks:
+      - datastream
+
+  client:
+    image:
+      sneakyselderey/datastream-client:latest
+    depends_on:
+      - server
+    ports:
+      - "${CLIENT_PORT:-8080}:80"
+    restart: unless-stopped
+    networks:
+      - datastream
+
+networks:
+  datastream:
+    driver: bridge
+
+volumes:
+  datastream_db:
 ```
 
 ## Run
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
 
 Open:
