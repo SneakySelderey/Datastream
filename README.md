@@ -1,4 +1,19 @@
-# Datastream Docker Setup
+# Overview
+
+![Albums screenshot](docs/images/albums-page.png)
+
+Main features:
+
+- Automatic music library scanning from a mounted host folder
+- Browse and filter tracks, albums, and artists
+- Playlist management (create, update, and organize tracks)
+- JWT-based authentication with cookie support
+- HTTP audio streaming endpoints
+- Realtime scanner updates over WebSocket
+- Persistent SQLite database storage via Docker volume
+- One-command deployment with Docker Compose
+
+![Album screenshot](docs/images/album-page.png)
 
 This project runs with two containers:
 
