@@ -70,45 +70,24 @@ export class ArtistsService {
     const artist = await this.prisma.artist.findUnique({
       where: { id },
       include: {
-        albums: {
-          orderBy: { date: 'desc' },
-        },
-        tracks: {
-          orderBy: { title: 'asc' },
-          include: {
-             album: true,
-             genres: true,
-             artists: true
-          }
-        },
         _count: {
-            select: { albums: true, tracks: true }
-        }
-      }
+          select: { albums: true, tracks: true },
+        },
+      },
     });
 
     if (!artist) throw new NotFoundException('Artist not found');
 
-    const totalSize = artist.tracks.reduce((acc, t) => acc + t.size, 0);
-
-    const formattedAlbums = artist.albums.map(album => ({
-      ...album,
-      artists: [artist],
-      artistId: artist.id,
-      tracks: [],
-      genres: [],
-      trackCount: 0,
-    }));
-
     return {
       id: artist.id,
       name: artist.name,
-      albums: formattedAlbums,
-      tracks: artist.tracks,
+      createdAt: artist.createdAt,
+      albums: [],
+      tracks: [],
       albumCount: artist._count.albums,
       songCount: artist._count.tracks,
-      size: totalSize.toString(),
-      plays: 0
+      size: '0',
+      plays: 0,
     };
   }
 }
