@@ -3,7 +3,7 @@ FROM node:25.6.0-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci && npm cache clean --force
 
 COPY . .
 RUN npm exec vite build

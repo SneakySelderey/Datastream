@@ -3,7 +3,7 @@ FROM node:25.6.0-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci && npm cache clean --force
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./
@@ -22,7 +22,7 @@ ENV NODE_ENV=production
 COPY package*.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev && npm cache clean --force
 RUN npx prisma generate
 
 COPY --from=builder /app/dist ./dist
