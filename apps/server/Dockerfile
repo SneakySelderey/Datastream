@@ -13,6 +13,7 @@ COPY src ./src
 
 RUN npx prisma generate
 RUN npm run build
+RUN npm prune --omit=dev && npm cache clean --force
 
 FROM node:25.6.0-alpine
 
@@ -22,10 +23,8 @@ ENV NODE_ENV=production
 COPY package*.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
-RUN npm ci --omit=dev && npm cache clean --force
-RUN npx prisma generate
-
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 3000
 
