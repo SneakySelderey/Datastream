@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -10,13 +11,16 @@ import { ScannerGateway, type ScanProgressPayload } from './scanner.gateway';
 export class ScannerService implements OnModuleInit {
   private readonly logger = new Logger(ScannerService.name);
   private musicPath = process.env.MUSIC_PATH ?? '/music';
-  private coversCachePath = '/data/covers';
+  private coversCachePath: string;
   private isScanning = false;
 
   constructor(
     private prisma: PrismaService,
     private scannerGateway: ScannerGateway,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.coversCachePath = this.configService.get<string>('COVERS_CACHE_PATH', '/data/covers');
+  }
 
   async onModuleInit() {
     if (!this.musicPath || !fs.existsSync(this.musicPath)) {

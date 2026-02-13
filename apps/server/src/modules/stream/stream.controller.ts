@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Res, StreamableFile, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { type Response } from 'express';
 import { createReadStream, existsSync, statSync } from 'fs';
 import { extname, join } from 'path';
@@ -6,9 +7,14 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('stream')
 export class StreamController {
-  private coversCachePath = '/data/covers';
+  private coversCachePath: string;
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) {
+    this.coversCachePath = this.configService.get<string>('COVERS_CACHE_PATH', '/data/covers');
+  }
 
   @Get('cover/:filename')
   getCover(@Param('filename') filename: string, @Res({ passthrough: true }) res: Response) {

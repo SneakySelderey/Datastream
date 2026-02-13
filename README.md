@@ -93,5 +93,6 @@ WebSocket path used by frontend:
 
 - SQLite DB is persisted in the named volume `datastream_db`.
 - Music library host path is configurable via `MUSIC_HOST_PATH` and is always mounted to fixed container path `/music`.
+- Cover cache path is configurable via `COVERS_CACHE_PATH` (default: `/data/covers`).
 - If you need HTTPS/HTTP/3, place an external reverse proxy in front later (Nginx/Caddy/Traefik/CDN).
 - `apps/server/.env` is for non-Docker local backend runs only (`npm run start:dev` in `apps/server`).

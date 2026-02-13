@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { StreamController } from './stream.controller';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -12,6 +13,14 @@ describe('StreamController', () => {
         {
           provide: PrismaService,
           useValue: {},
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string, defaultValue?: string) =>
+              key === 'COVERS_CACHE_PATH' ? '/data/covers' : defaultValue
+            ),
+          },
         },
       ],
     }).compile();
