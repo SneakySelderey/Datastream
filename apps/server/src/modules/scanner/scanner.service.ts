@@ -210,6 +210,82 @@ export class ScannerService implements OnModuleInit {
     this.scannerGateway.emitProgress(progress);
   }
 
+  private async loadDirectoryChecksums(): Promise<Record<string, string>> {
+    try {
+      const states = await this.prisma.scannerDirectoryState.findMany({
+        select: {
+          directoryPath: true,
+          checksum: true,
+        },
+      });
+
+      return states.reduce<Record<string, string>>((acc, state) => {
+        acc[state.directoryPath] = state.checksum;
+        return acc;
+      }, {});
+    } catch (e) {
+      this.logger.warn(`Failed to load directory checksum state from database: ${e.message}`);
+      return {};
+    }
+  }
+
+  private async saveDirectoryChecksums(checksums: Record<string, string>) {
+    try {
+      const directoryPaths = Object.keys(checksums);
+
+      for (const directoryPath of directoryPaths) {
+        await this.prisma.scannerDirectoryState.upsert({
+          where: { directoryPath },
+          update: {
+            checksum: checksums[directoryPath],
+          },
+          create: {
+            directoryPath,
+            checksum: checksums[directoryPath],
+          },
+        });
+      }
+    } catch (e) {
+      this.logger.warn(`Failed to persist directory checksum state to database: ${e.message}`);
+    }
+  }
+
+  private async removeDirectoryChecksums(directoryPaths: string[]) {
+    if (directoryPaths.length === 0) {
+      return;
+    }
+
+    try {
+      await this.prisma.scannerDirectoryState.deleteMany({
+        where: {
+          directoryPath: {
+            in: directoryPaths,
+          },
+        },
+      });
+    } catch (e) {
+      this.logger.warn(`Failed to remove stale directory checksum state from database: ${e.message}`);
+    }
+  }
+
+  private buildDirectoryChecksum(filesInDirectory: string[]): string {
+    const hash = crypto.createHash('md5');
+
+    const sortedFiles = [...filesInDirectory].sort();
+    for (const filePath of sortedFiles) {
+      const stats = fs.statSync(filePath);
+      const relativePath = path.relative(this.musicPath, filePath);
+      hash.update(relativePath);
+      hash.update('|');
+      hash.update(String(stats.size));
+      hash.update('|');
+      hash.update(String(stats.mtimeMs));
+      hash.update('\n');
+    }
+
+    return hash.digest('hex');
+  }
+
   async scanLibrary() {
     if (this.isScanning) {
       this.logger.warn('Scan request skipped because another scan is running.');
@@ -227,37 +303,70 @@ export class ScannerService implements OnModuleInit {
         absolute: true,
       });
 
-      const folderSet = new Set(files.map((filePath) => path.dirname(filePath)));
-      const totalFolders = folderSet.size;
+      const filesByDirectory = new Map<string, string[]>();
+      const scannedPaths = new Set<string>();
+      
+      for (const filePath of files) {
+        scannedPaths.add(filePath);
+        const directoryPath = path.dirname(filePath);
+        const existing = filesByDirectory.get(directoryPath);
+
+        if (existing) {
+          existing.push(filePath);
+        } else {
+          filesByDirectory.set(directoryPath, [filePath]);
+        }
+      }
+
+      const previousDirectoryChecksums = await this.loadDirectoryChecksums();
+      const currentDirectoryChecksums: Record<string, string> = {};
+      const changedDirectories: string[] = [];
+
+      for (const [directoryPath, directoryFiles] of filesByDirectory) {
+        const checksum = this.buildDirectoryChecksum(directoryFiles);
+        currentDirectoryChecksums[directoryPath] = checksum;
+
+        if (previousDirectoryChecksums[directoryPath] !== checksum) {
+          changedDirectories.push(directoryPath);
+        }
+      }
+
+      const removedDirectories = Object.keys(previousDirectoryChecksums).filter(
+        (directoryPath) => !filesByDirectory.has(directoryPath),
+      );
+
+      await this.removeDirectoryChecksums(removedDirectories);
+
+      const totalDirectories = filesByDirectory.size;
 
       this.emitProgress({
         status: 'running',
         foldersScanned: 0,
-        totalFolders,
+        totalFolders: totalDirectories,
         startedAt,
       });
 
-      this.logger.log(`Found ${files.length} files in ${totalFolders} folders.`);
+      this.logger.log(
+        `Found ${files.length} files in ${filesByDirectory.size} directories. ${changedDirectories.length} changed/new directories, ${removedDirectories.length} removed directories.`,
+      );
       const mm = await import('music-metadata');
 
-      const scannedPaths = new Set<string>();
-      const scannedFolders = new Set<string>();
+      let scannedDirectories = 0;
+      const failedDirectories = new Set<string>();
 
-      for (const filePath of files) {
-        scannedPaths.add(filePath);
+      for (const directoryPath of changedDirectories) {
+        scannedDirectories += 1;
+        this.emitProgress({
+          status: 'running',
+          foldersScanned: scannedDirectories,
+          totalFolders: totalDirectories,
+          startedAt,
+        });
 
-        const folderPath = path.dirname(filePath);
-        if (!scannedFolders.has(folderPath)) {
-          scannedFolders.add(folderPath);
-          this.emitProgress({
-            status: 'running',
-            foldersScanned: scannedFolders.size,
-            totalFolders,
-            startedAt,
-          });
-        }
+        const directoryFiles = filesByDirectory.get(directoryPath) ?? [];
 
-        try {
+        for (const filePath of directoryFiles) {
+          try {
           const metadata = await mm.parseFile(filePath);
           const { common, format } = metadata;
 
@@ -436,8 +545,10 @@ export class ScannerService implements OnModuleInit {
               },
             });
           }
-        } catch (e) {
-          this.logger.error(`Error processing ${filePath}: ${e.message}`);
+          } catch (e) {
+            failedDirectories.add(directoryPath);
+            this.logger.error(`Error processing ${filePath}: ${e.message}`);
+          }
         }
       }
 
@@ -482,13 +593,25 @@ export class ScannerService implements OnModuleInit {
         this.logger.log(`Removed ${missingIds.length} missing tracks.`);
       }
 
+      const nextDirectoryChecksums = { ...currentDirectoryChecksums };
+      for (const directoryPath of failedDirectories) {
+        const previous = previousDirectoryChecksums[directoryPath];
+        if (previous) {
+          nextDirectoryChecksums[directoryPath] = previous;
+        } else {
+          delete nextDirectoryChecksums[directoryPath];
+        }
+      }
+
+      await this.saveDirectoryChecksums(nextDirectoryChecksums);
+
       await this.pruneUnusedCovers();
       this.logger.log('Scan complete!');
 
       this.emitProgress({
         status: 'completed',
-        foldersScanned: totalFolders,
-        totalFolders,
+        foldersScanned: totalDirectories,
+        totalFolders: totalDirectories,
         startedAt,
         finishedAt: new Date().toISOString(),
       });
