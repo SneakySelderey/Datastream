@@ -268,7 +268,37 @@ export class ScannerService implements OnModuleInit {
       .digest('hex');
   }
 
-  async scanLibrary() {
+  private async resetLibraryData() {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.trackPlay.deleteMany({});
+      await tx.track.deleteMany({});
+      await tx.album.deleteMany({});
+      await tx.artist.deleteMany({});
+      await tx.genre.deleteMany({});
+      await tx.scannerDirectoryState.deleteMany({});
+    });
+
+    if (!fs.existsSync(this.coversCachePath)) return;
+
+    const entries = fs.readdirSync(this.coversCachePath);
+    
+    for (const entry of entries) {
+      const entryPath = path.join(this.coversCachePath, entry);
+      try {
+        if (fs.statSync(entryPath).isFile()) {
+          fs.unlinkSync(entryPath);
+        }
+      } catch (e) {
+        this.logger.warn(`Failed to clear cached cover ${entry}: ${e.message}`);
+      }
+    }
+  }
+
+  async fullRescanLibrary() {
+    return this.scanLibrary({ fullRescan: true });
+  }
+
+  async scanLibrary(options: { fullRescan?: boolean } = {}) {
     if (this.isScanning) {
       this.logger.warn('Scan request skipped because another scan is running.');
       return false;
@@ -278,6 +308,11 @@ export class ScannerService implements OnModuleInit {
     const startedAt = new Date().toISOString();
 
     try {
+      if (options.fullRescan) {
+        this.logger.log('Running full rescan: resetting library data before scanning.');
+        await this.resetLibraryData();
+      }
+
       this.logger.log(`Scanning: ${this.musicPath}`);
 
       const files = await glob('**/*.{mp3,flac,m4a,wav,ogg,opus}', {

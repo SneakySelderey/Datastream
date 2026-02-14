@@ -10,4 +10,10 @@ export class ScannerController {
     const started = await this.scannerService.scanLibrary();
     return { status: started ? 'started' : 'already-running' };
   }
+
+  @Post('full-rescan')
+  async fullRescan() {
+    const started = await this.scannerService.fullRescanLibrary();
+    return { status: started ? 'started' : 'already-running' };
+  }
 }
