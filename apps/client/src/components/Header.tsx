@@ -60,6 +60,18 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
     }
   };
 
+  const handleFullRescan = async () => {
+    if (isRescanning) return;
+    setIsRescanRequestInFlight(true);
+    try {
+      await fetch('/api/scanner/full-rescan', { method: 'POST' });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsRescanRequestInFlight(false);
+    }
+  };
+
   const formatLastRescanTime = () => {
     if (!lastRescanInfo?.finishedAt) return t('notAvailable');
     return new Date(lastRescanInfo.finishedAt).toLocaleString();
@@ -122,13 +134,23 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
 
           {isRescanMenuOpen && (
             <div className='absolute right-0 top-10 w-72 rounded-md border border-fg/20 bg-bg p-3 shadow-lg z-50'>
-              <button
-                onClick={handleRescan}
-                disabled={isRescanning}
-                className='mb-3 w-full rounded-md border border-fg/20 px-3 py-2 text-left hover:bg-fg/10 disabled:opacity-60 disabled:cursor-not-allowed'
-              >
-                {t('rescan')}
-              </button>
+              <div className='mb-3 flex gap-2'>
+                <button
+                  onClick={handleRescan}
+                  disabled={isRescanning}
+                  className='w-full rounded-md border border-fg/20 px-3 py-2 text-left hover:bg-fg/10 disabled:opacity-60 disabled:cursor-not-allowed'
+                >
+                  {t('rescan')}
+                </button>
+
+                <button
+                  onClick={handleFullRescan}
+                  disabled={isRescanning}
+                  className='w-full rounded-md border border-fg/20 px-3 py-2 text-left hover:bg-fg/10 disabled:opacity-60 disabled:cursor-not-allowed'
+                >
+                  {t('fullRescan', 'Full rescan')}
+                </button>
+              </div>
 
               {scanProgress.status === 'running' && (
                 <p className='mb-3 text-sm text-fg/80'>

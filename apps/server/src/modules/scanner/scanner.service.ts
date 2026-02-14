@@ -32,10 +32,9 @@ export class ScannerService implements OnModuleInit {
       fs.mkdirSync(this.coversCachePath, { recursive: true });
     }
 
-    // void this.scanLibrary().catch((e: Error) => {
-    //   this.logger.error(`Initial scan failed: ${e.message}`);
-    // });
-    this.logger.log('Automatic startup scan is disabled.');
+    void this.scanLibrary().catch((e: Error) => {
+      this.logger.error(`Initial quick scan failed: ${e.message}`);
+    });
   }
 
   private saveCover(picture: any): string | null {
@@ -52,33 +51,6 @@ export class ScannerService implements OnModuleInit {
     }
 
     return filename;
-  }
-
-  private buildMetadataChecksum(metadata: {
-    title: string | null;
-    trackNumber: number | null;
-    totalNumber: number | null;
-    discNumber: number | null;
-    duration: number;
-    bitrate: number;
-    format: string;
-    date: string | null;
-    coverFilename: string | null;
-    trackArtists: string[];
-    albumArtists: string[];
-    nativeTrackArtistTags: string[];
-    nativeAlbumArtistTags: string[];
-    genres: string[];
-    albumTitle: string;
-    replayGainTrack: number | null;
-    replayGainAlbum: number | null;
-    replayPeakTrack: number | null;
-    replayPeakAlbum: number | null;
-  }) {
-    return crypto
-      .createHash('md5')
-      .update(JSON.stringify(metadata))
-      .digest('hex');
   }
 
   private extractYear(value: string | number | null): string | null {
@@ -210,7 +182,122 @@ export class ScannerService implements OnModuleInit {
     this.scannerGateway.emitProgress(progress);
   }
 
-  async scanLibrary() {
+  private async loadDirectoryChecksums(): Promise<Record<string, string>> {
+    try {
+      const states = await this.prisma.scannerDirectoryState.findMany({
+        select: {
+          directoryPath: true,
+          checksum: true,
+        },
+      });
+
+      return states.reduce<Record<string, string>>((acc, state) => {
+        acc[state.directoryPath] = state.checksum;
+        return acc;
+      }, {});
+    } catch (e) {
+      this.logger.warn(`Failed to load directory checksum state from database: ${e.message}`);
+      return {};
+    }
+  }
+
+  private async saveDirectoryChecksums(checksums: Record<string, string>) {
+    try {
+      const directoryPaths = Object.keys(checksums);
+
+      for (const directoryPath of directoryPaths) {
+        await this.prisma.scannerDirectoryState.upsert({
+          where: { directoryPath },
+          update: {
+            checksum: checksums[directoryPath],
+          },
+          create: {
+            directoryPath,
+            checksum: checksums[directoryPath],
+          },
+        });
+      }
+    } catch (e) {
+      this.logger.warn(`Failed to persist directory checksum state to database: ${e.message}`);
+    }
+  }
+
+  private async removeDirectoryChecksums(directoryPaths: string[]) {
+    if (directoryPaths.length === 0) {
+      return;
+    }
+
+    try {
+      await this.prisma.scannerDirectoryState.deleteMany({
+        where: {
+          directoryPath: {
+            in: directoryPaths,
+          },
+        },
+      });
+    } catch (e) {
+      this.logger.warn(`Failed to remove stale directory checksum state from database: ${e.message}`);
+    }
+  }
+
+  private buildDirectoryChecksum(filesInDirectory: string[]): string {
+    const hash = crypto.createHash('md5');
+
+    const sortedFiles = [...filesInDirectory].sort();
+    for (const filePath of sortedFiles) {
+      const stats = fs.statSync(filePath);
+      const relativePath = path.relative(this.musicPath, filePath);
+      hash.update(relativePath);
+      hash.update('|');
+      hash.update(String(stats.size));
+      hash.update('|');
+      hash.update(String(stats.mtime.getTime()));
+      hash.update('\n');
+    }
+
+    return hash.digest('hex');
+  }
+
+  private buildFileFingerprintChecksum(stats: fs.Stats): string {
+    return crypto
+      .createHash('md5')
+      .update(String(stats.mtime.getTime()))
+      .update('|')
+      .update(String(stats.size))
+      .digest('hex');
+  }
+
+  private async resetLibraryData() {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.trackPlay.deleteMany({});
+      await tx.track.deleteMany({});
+      await tx.album.deleteMany({});
+      await tx.artist.deleteMany({});
+      await tx.genre.deleteMany({});
+      await tx.scannerDirectoryState.deleteMany({});
+    });
+
+    if (!fs.existsSync(this.coversCachePath)) return;
+
+    const entries = fs.readdirSync(this.coversCachePath);
+    
+    for (const entry of entries) {
+      const entryPath = path.join(this.coversCachePath, entry);
+      try {
+        if (fs.statSync(entryPath).isFile()) {
+          fs.unlinkSync(entryPath);
+        }
+      } catch (e) {
+        this.logger.warn(`Failed to clear cached cover ${entry}: ${e.message}`);
+      }
+    }
+  }
+
+  async fullRescanLibrary() {
+    return this.scanLibrary({ fullRescan: true });
+  }
+
+  async scanLibrary(options: { fullRescan?: boolean } = {}) {
     if (this.isScanning) {
       this.logger.warn('Scan request skipped because another scan is running.');
       return false;
@@ -220,6 +307,11 @@ export class ScannerService implements OnModuleInit {
     const startedAt = new Date().toISOString();
 
     try {
+      if (options.fullRescan) {
+        this.logger.log('Running full rescan: resetting library data before scanning.');
+        await this.resetLibraryData();
+      }
+
       this.logger.log(`Scanning: ${this.musicPath}`);
 
       const files = await glob('**/*.{mp3,flac,m4a,wav,ogg,opus}', {
@@ -227,37 +319,84 @@ export class ScannerService implements OnModuleInit {
         absolute: true,
       });
 
-      const folderSet = new Set(files.map((filePath) => path.dirname(filePath)));
-      const totalFolders = folderSet.size;
+      const filesByDirectory = new Map<string, string[]>();
+      const scannedPaths = new Set<string>();
+      
+      for (const filePath of files) {
+        scannedPaths.add(filePath);
+        const directoryPath = path.dirname(filePath);
+        const existing = filesByDirectory.get(directoryPath);
+
+        if (existing) {
+          existing.push(filePath);
+        } else {
+          filesByDirectory.set(directoryPath, [filePath]);
+        }
+      }
+
+      const previousDirectoryChecksums = await this.loadDirectoryChecksums();
+      const currentDirectoryChecksums: Record<string, string> = {};
+      const changedDirectories: string[] = [];
+
+      for (const [directoryPath, directoryFiles] of filesByDirectory) {
+        const checksum = this.buildDirectoryChecksum(directoryFiles);
+        currentDirectoryChecksums[directoryPath] = checksum;
+
+        if (previousDirectoryChecksums[directoryPath] !== checksum) {
+          changedDirectories.push(directoryPath);
+        }
+      }
+
+      const removedDirectories = Object.keys(previousDirectoryChecksums).filter(
+        (directoryPath) => !filesByDirectory.has(directoryPath),
+      );
+
+      await this.removeDirectoryChecksums(removedDirectories);
+
+      const totalDirectories = filesByDirectory.size;
 
       this.emitProgress({
         status: 'running',
         foldersScanned: 0,
-        totalFolders,
+        totalFolders: totalDirectories,
         startedAt,
       });
 
-      this.logger.log(`Found ${files.length} files in ${totalFolders} folders.`);
+      this.logger.log(
+        `Found ${files.length} files in ${filesByDirectory.size} directories. ${changedDirectories.length} changed/new directories, ${removedDirectories.length} removed directories.`,
+      );
       const mm = await import('music-metadata');
 
-      const scannedPaths = new Set<string>();
-      const scannedFolders = new Set<string>();
+      let scannedDirectories = 0;
+      const failedDirectories = new Set<string>();
 
-      for (const filePath of files) {
-        scannedPaths.add(filePath);
+      for (const directoryPath of changedDirectories) {
+        scannedDirectories += 1;
+        this.emitProgress({
+          status: 'running',
+          foldersScanned: scannedDirectories,
+          totalFolders: totalDirectories,
+          startedAt,
+        });
 
-        const folderPath = path.dirname(filePath);
-        if (!scannedFolders.has(folderPath)) {
-          scannedFolders.add(folderPath);
-          this.emitProgress({
-            status: 'running',
-            foldersScanned: scannedFolders.size,
-            totalFolders,
-            startedAt,
+        const directoryFiles = filesByDirectory.get(directoryPath) ?? [];
+
+        for (const filePath of directoryFiles) {
+          try {
+          const fileStats = fs.statSync(filePath);
+          const fileMtimeChecksum = this.buildFileFingerprintChecksum(fileStats);
+          const existingTrack = await this.prisma.track.findUnique({
+            where: { filePath },
+            select: {
+              id: true,
+              metadataChecksum: true,
+            },
           });
-        }
 
-        try {
+          if (existingTrack && existingTrack.metadataChecksum === fileMtimeChecksum) {
+            continue;
+          }
+
           const metadata = await mm.parseFile(filePath);
           const { common, format } = metadata;
 
@@ -308,32 +447,7 @@ export class ScannerService implements OnModuleInit {
             'REPLAYGAIN_ALBUM_PEAK',
           ]);
 
-          const metadataChecksum = this.buildMetadataChecksum({
-            title: common.title || null,
-            trackNumber: common.track.no || null,
-            totalNumber: common.track.of || null,
-            discNumber: common.disk.no || null,
-            duration: format.duration || 0,
-            bitrate: format.bitrate || 0,
-            format: format.container || 'unknown',
-            date: releaseDate,
-            coverFilename,
-            trackArtists,
-            albumArtists,
-            nativeTrackArtistTags: this.normalizeArtists(nativeTrackArtists),
-            nativeAlbumArtistTags: this.normalizeArtists(nativeAlbumArtists),
-            genres,
-            albumTitle,
-            replayGainTrack,
-            replayGainAlbum,
-            replayPeakTrack,
-            replayPeakAlbum,
-          });
-
-          const exists = await this.prisma.track.findUnique({ where: { filePath } });
-          if (exists && exists.metadataChecksum === metadataChecksum) {
-            continue;
-          }
+          const metadataChecksum = fileMtimeChecksum;
 
           let album = await this.prisma.album.findFirst({
             where: {
@@ -376,9 +490,9 @@ export class ScannerService implements OnModuleInit {
           const artistConnections = await this.ensureArtists(trackArtists);
           const genreConnections = await this.ensureGenres(genres);
 
-          if (exists) {
+          if (existingTrack) {
             await this.prisma.track.update({
-              where: { id: exists.id },
+              where: { id: existingTrack.id },
               data: {
                 title: common.title || path.basename(filePath),
                 number: common.track.no || null,
@@ -386,7 +500,7 @@ export class ScannerService implements OnModuleInit {
                 discNumber: common.disk.no || 1,
                 duration: format.duration || 0,
                 bitrate: format.bitrate || 0,
-                size: fs.statSync(filePath).size,
+                size: fileStats.size,
                 filePath,
                 fileName: path.basename(filePath),
                 coverPath: coverFilename,
@@ -415,7 +529,7 @@ export class ScannerService implements OnModuleInit {
                 discNumber: common.disk.no || 1,
                 duration: format.duration || 0,
                 bitrate: format.bitrate || 0,
-                size: fs.statSync(filePath).size,
+                size: fileStats.size,
                 filePath,
                 fileName: path.basename(filePath),
                 coverPath: coverFilename,
@@ -436,8 +550,10 @@ export class ScannerService implements OnModuleInit {
               },
             });
           }
-        } catch (e) {
-          this.logger.error(`Error processing ${filePath}: ${e.message}`);
+          } catch (e) {
+            failedDirectories.add(directoryPath);
+            this.logger.error(`Error processing ${filePath}: ${e.message}`);
+          }
         }
       }
 
@@ -482,13 +598,25 @@ export class ScannerService implements OnModuleInit {
         this.logger.log(`Removed ${missingIds.length} missing tracks.`);
       }
 
+      const nextDirectoryChecksums = { ...currentDirectoryChecksums };
+      for (const directoryPath of failedDirectories) {
+        const previous = previousDirectoryChecksums[directoryPath];
+        if (previous) {
+          nextDirectoryChecksums[directoryPath] = previous;
+        } else {
+          delete nextDirectoryChecksums[directoryPath];
+        }
+      }
+
+      await this.saveDirectoryChecksums(nextDirectoryChecksums);
+
       await this.pruneUnusedCovers();
       this.logger.log('Scan complete!');
 
       this.emitProgress({
         status: 'completed',
-        foldersScanned: totalFolders,
-        totalFolders,
+        foldersScanned: totalDirectories,
+        totalFolders: totalDirectories,
         startedAt,
         finishedAt: new Date().toISOString(),
       });
