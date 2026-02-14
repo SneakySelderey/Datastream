@@ -32,10 +32,9 @@ export class ScannerService implements OnModuleInit {
       fs.mkdirSync(this.coversCachePath, { recursive: true });
     }
 
-    // void this.scanLibrary().catch((e: Error) => {
-    //   this.logger.error(`Initial scan failed: ${e.message}`);
-    // });
-    this.logger.log('Automatic startup scan is disabled.');
+    void this.scanLibrary().catch((e: Error) => {
+      this.logger.error(`Initial quick scan failed: ${e.message}`);
+    });
   }
 
   private saveCover(picture: any): string | null {
