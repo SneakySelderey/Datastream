@@ -54,33 +54,6 @@ export class ScannerService implements OnModuleInit {
     return filename;
   }
 
-  private buildMetadataChecksum(metadata: {
-    title: string | null;
-    trackNumber: number | null;
-    totalNumber: number | null;
-    discNumber: number | null;
-    duration: number;
-    bitrate: number;
-    format: string;
-    date: string | null;
-    coverFilename: string | null;
-    trackArtists: string[];
-    albumArtists: string[];
-    nativeTrackArtistTags: string[];
-    nativeAlbumArtistTags: string[];
-    genres: string[];
-    albumTitle: string;
-    replayGainTrack: number | null;
-    replayGainAlbum: number | null;
-    replayPeakTrack: number | null;
-    replayPeakAlbum: number | null;
-  }) {
-    return crypto
-      .createHash('md5')
-      .update(JSON.stringify(metadata))
-      .digest('hex');
-  }
-
   private extractYear(value: string | number | null): string | null {
     if (value === null || value === undefined) return null;
 
@@ -279,11 +252,20 @@ export class ScannerService implements OnModuleInit {
       hash.update('|');
       hash.update(String(stats.size));
       hash.update('|');
-      hash.update(String(stats.mtimeMs));
+      hash.update(String(stats.mtime.getTime()));
       hash.update('\n');
     }
 
     return hash.digest('hex');
+  }
+
+  private buildFileFingerprintChecksum(stats: fs.Stats): string {
+    return crypto
+      .createHash('md5')
+      .update(String(stats.mtime.getTime()))
+      .update('|')
+      .update(String(stats.size))
+      .digest('hex');
   }
 
   async scanLibrary() {
@@ -367,6 +349,20 @@ export class ScannerService implements OnModuleInit {
 
         for (const filePath of directoryFiles) {
           try {
+          const fileStats = fs.statSync(filePath);
+          const fileMtimeChecksum = this.buildFileFingerprintChecksum(fileStats);
+          const existingTrack = await this.prisma.track.findUnique({
+            where: { filePath },
+            select: {
+              id: true,
+              metadataChecksum: true,
+            },
+          });
+
+          if (existingTrack && existingTrack.metadataChecksum === fileMtimeChecksum) {
+            continue;
+          }
+
           const metadata = await mm.parseFile(filePath);
           const { common, format } = metadata;
 
@@ -417,32 +413,7 @@ export class ScannerService implements OnModuleInit {
             'REPLAYGAIN_ALBUM_PEAK',
           ]);
 
-          const metadataChecksum = this.buildMetadataChecksum({
-            title: common.title || null,
-            trackNumber: common.track.no || null,
-            totalNumber: common.track.of || null,
-            discNumber: common.disk.no || null,
-            duration: format.duration || 0,
-            bitrate: format.bitrate || 0,
-            format: format.container || 'unknown',
-            date: releaseDate,
-            coverFilename,
-            trackArtists,
-            albumArtists,
-            nativeTrackArtistTags: this.normalizeArtists(nativeTrackArtists),
-            nativeAlbumArtistTags: this.normalizeArtists(nativeAlbumArtists),
-            genres,
-            albumTitle,
-            replayGainTrack,
-            replayGainAlbum,
-            replayPeakTrack,
-            replayPeakAlbum,
-          });
-
-          const exists = await this.prisma.track.findUnique({ where: { filePath } });
-          if (exists && exists.metadataChecksum === metadataChecksum) {
-            continue;
-          }
+          const metadataChecksum = fileMtimeChecksum;
 
           let album = await this.prisma.album.findFirst({
             where: {
@@ -485,9 +456,9 @@ export class ScannerService implements OnModuleInit {
           const artistConnections = await this.ensureArtists(trackArtists);
           const genreConnections = await this.ensureGenres(genres);
 
-          if (exists) {
+          if (existingTrack) {
             await this.prisma.track.update({
-              where: { id: exists.id },
+              where: { id: existingTrack.id },
               data: {
                 title: common.title || path.basename(filePath),
                 number: common.track.no || null,
@@ -495,7 +466,7 @@ export class ScannerService implements OnModuleInit {
                 discNumber: common.disk.no || 1,
                 duration: format.duration || 0,
                 bitrate: format.bitrate || 0,
-                size: fs.statSync(filePath).size,
+                size: fileStats.size,
                 filePath,
                 fileName: path.basename(filePath),
                 coverPath: coverFilename,
@@ -524,7 +495,7 @@ export class ScannerService implements OnModuleInit {
                 discNumber: common.disk.no || 1,
                 duration: format.duration || 0,
                 bitrate: format.bitrate || 0,
-                size: fs.statSync(filePath).size,
+                size: fileStats.size,
                 filePath,
                 fileName: path.basename(filePath),
                 coverPath: coverFilename,
