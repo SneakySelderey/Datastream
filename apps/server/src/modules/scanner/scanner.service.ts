@@ -451,6 +451,7 @@ export class ScannerService implements OnModuleInit {
           ]);
 
           const metadataChecksum = fileMtimeChecksum;
+          const albumArtistConnections = await this.ensureArtists(albumArtists);
 
           let album = await this.prisma.album.findFirst({
             where: {
@@ -469,10 +470,7 @@ export class ScannerService implements OnModuleInit {
                 title: albumTitle,
                 date: albumDate,
                 artists: {
-                  connectOrCreate: albumArtists.map((name) => ({
-                    where: { name },
-                    create: { name },
-                  })),
+                  connect: albumArtistConnections,
                 },
               },
             });
@@ -480,11 +478,9 @@ export class ScannerService implements OnModuleInit {
             await this.prisma.album.update({
               where: { id: album.id },
               data: {
+                date: albumDate,
                 artists: {
-                  connectOrCreate: albumArtists.map((name) => ({
-                    where: { name },
-                    create: { name },
-                  })),
+                  set: albumArtistConnections,
                 },
               },
             });
