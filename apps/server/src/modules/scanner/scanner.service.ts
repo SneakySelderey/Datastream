@@ -253,8 +253,6 @@ export class ScannerService implements OnModuleInit {
       const relativePath = path.relative(this.musicPath, filePath);
       hash.update(relativePath);
       hash.update('|');
-      hash.update(String(stats.size));
-      hash.update('|');
       hash.update(String(stats.mtime.getTime()));
       hash.update('\n');
     }
@@ -263,12 +261,7 @@ export class ScannerService implements OnModuleInit {
   }
 
   private buildFileFingerprintChecksum(stats: fs.Stats): string {
-    return crypto
-      .createHash('md5')
-      .update(String(stats.mtime.getTime()))
-      .update('|')
-      .update(String(stats.size))
-      .digest('hex');
+    return String(stats.mtime.getTime());
   }
 
   private async resetLibraryData() {
