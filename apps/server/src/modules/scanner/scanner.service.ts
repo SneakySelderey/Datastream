@@ -168,7 +168,7 @@ export class ScannerService implements OnModuleInit {
           fs.unlinkSync(path.join(this.coversCachePath, file));
           removed += 1;
         } catch (e) {
-          this.logger.warn(`Failed to remove cover ${file}: ${e.message}`);
+          this.logger.warn(`Failed to remove cover ${file}: ${this.getErrorMessage(e)}`);
         }
       }
     }
@@ -180,6 +180,10 @@ export class ScannerService implements OnModuleInit {
 
   private emitProgress(progress: ScanProgressPayload) {
     this.scannerGateway.emitProgress(progress);
+  }
+
+  private getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
   }
 
   private async loadDirectoryChecksums(): Promise<Record<string, string>> {
@@ -196,7 +200,7 @@ export class ScannerService implements OnModuleInit {
         return acc;
       }, {});
     } catch (e) {
-      this.logger.warn(`Failed to load directory checksum state from database: ${e.message}`);
+      this.logger.warn(`Failed to load directory checksum state from database: ${this.getErrorMessage(e)}`);
       return {};
     }
   }
@@ -218,7 +222,7 @@ export class ScannerService implements OnModuleInit {
         });
       }
     } catch (e) {
-      this.logger.warn(`Failed to persist directory checksum state to database: ${e.message}`);
+      this.logger.warn(`Failed to persist directory checksum state to database: ${this.getErrorMessage(e)}`);
     }
   }
 
@@ -236,7 +240,7 @@ export class ScannerService implements OnModuleInit {
         },
       });
     } catch (e) {
-      this.logger.warn(`Failed to remove stale directory checksum state from database: ${e.message}`);
+      this.logger.warn(`Failed to remove stale directory checksum state from database: ${this.getErrorMessage(e)}`);
     }
   }
 
@@ -288,7 +292,7 @@ export class ScannerService implements OnModuleInit {
           fs.unlinkSync(entryPath);
         }
       } catch (e) {
-        this.logger.warn(`Failed to clear cached cover ${entry}: ${e.message}`);
+        this.logger.warn(`Failed to clear cached cover ${entry}: ${this.getErrorMessage(e)}`);
       }
     }
   }
@@ -552,7 +556,7 @@ export class ScannerService implements OnModuleInit {
           }
           } catch (e) {
             failedDirectories.add(directoryPath);
-            this.logger.error(`Error processing ${filePath}: ${e.message}`);
+            this.logger.error(`Error processing ${filePath}: ${this.getErrorMessage(e)}`);
           }
         }
       }
@@ -622,7 +626,7 @@ export class ScannerService implements OnModuleInit {
       });
       return true;
     } catch (e) {
-      const message = e.message;
+      const message = this.getErrorMessage(e);
       this.logger.error(`Scan failed: ${message}`);
 
       this.emitProgress({
