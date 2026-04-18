@@ -61,15 +61,53 @@ export class ScannerService implements OnModuleInit {
     return match ? match[1] : null;
   }
 
+  private buildArtistIdentityHash(name: string): string {
+    return this.buildIdentityHash(['artist', name]);
+  }
+
   private async ensureArtists(names: string[]) {
     const records = await Promise.all(
-      names.map(name =>
-        this.prisma.artist.upsert({
+      names.map(async (name) => {
+        const identityHash = this.buildArtistIdentityHash(name);
+
+        const existingByIdentity = await this.prisma.artist.findUnique({
+          where: { identityHash },
+        });
+
+        if (existingByIdentity) {
+          if (existingByIdentity.name !== name) {
+            return this.prisma.artist.update({
+              where: { id: existingByIdentity.id },
+              data: {
+                name,
+                identityHash,
+              },
+            });
+          }
+
+          return existingByIdentity;
+        }
+
+        const existingByName = await this.prisma.artist.findUnique({
           where: { name },
-          update: {},
-          create: { name },
-        })
-      )
+        });
+
+        if (existingByName) {
+          return this.prisma.artist.update({
+            where: { id: existingByName.id },
+            data: {
+              identityHash,
+            },
+          });
+        }
+
+        return this.prisma.artist.create({
+          data: {
+            name,
+            identityHash,
+          },
+        });
+      })
     );
 
     return records.map(a => ({ id: a.id }));
@@ -105,6 +143,58 @@ export class ScannerService implements OnModuleInit {
     return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
   }
 
+  private normalizeIdentityPart(value: string | number | null | undefined): string {
+    if (value === null || value === undefined) return '';
+
+    return String(value)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
+  }
+
+  private buildIdentityHash(parts: Array<string | number | null | undefined>): string {
+    const normalized = parts.map((part) => this.normalizeIdentityPart(part)).join('|');
+    return crypto.createHash('sha1').update(normalized).digest('hex');
+  }
+
+  private buildAlbumIdentityHash(input: {
+    albumTitle: string;
+    albumArtists: string[];
+    albumDate: string | null;
+  }): string {
+    return this.buildIdentityHash([
+      'album',
+      ...this.normalizeArtistSet(input.albumArtists),
+      input.albumTitle,
+      input.albumDate,
+    ]);
+  }
+
+  private async findAlbumByIdentity(identityHash: string) {
+    return this.prisma.album.findUnique({
+      where: { identityHash },
+      select: {
+        id: true,
+        date: true,
+      },
+    });
+  }
+
+  private buildTrackIdentityHash(input: {
+    albumIdentityHash: string;
+    title: string;
+    discNumber: number | null | undefined;
+    trackNumber: number | null | undefined;
+  }): string {
+    return this.buildIdentityHash([
+      'track',
+      input.albumIdentityHash,
+      input.discNumber ?? 1,
+      input.trackNumber ?? '',
+      input.title,
+    ]);
+  }
+
   private hasSameArtists(left: string[], right: string[]): boolean {
     const normalizedLeft = this.normalizeArtistSet(left);
     const normalizedRight = this.normalizeArtistSet(right);
@@ -122,6 +212,7 @@ export class ScannerService implements OnModuleInit {
       select: {
         id: true,
         date: true,
+        identityHash: true,
         artists: {
           select: {
             name: true,
@@ -145,6 +236,7 @@ export class ScannerService implements OnModuleInit {
     return {
       id: matchingAlbum.id,
       date: matchingAlbum.date,
+      identityHash: matchingAlbum.identityHash,
     };
   }
 
@@ -330,32 +422,6 @@ export class ScannerService implements OnModuleInit {
     return String(stats.mtime.getTime());
   }
 
-  private async resetLibraryData() {
-    await this.prisma.$transaction(async (tx) => {
-      await tx.trackPlay.deleteMany({});
-      await tx.track.deleteMany({});
-      await tx.album.deleteMany({});
-      await tx.artist.deleteMany({});
-      await tx.genre.deleteMany({});
-      await tx.scannerDirectoryState.deleteMany({});
-    });
-
-    if (!fs.existsSync(this.coversCachePath)) return;
-
-    const entries = fs.readdirSync(this.coversCachePath);
-    
-    for (const entry of entries) {
-      const entryPath = path.join(this.coversCachePath, entry);
-      try {
-        if (fs.statSync(entryPath).isFile()) {
-          fs.unlinkSync(entryPath);
-        }
-      } catch (e) {
-        this.logger.warn(`Failed to clear cached cover ${entry}: ${this.getErrorMessage(e)}`);
-      }
-    }
-  }
-
   async fullRescanLibrary() {
     return this.scanLibrary({ fullRescan: true });
   }
@@ -371,8 +437,7 @@ export class ScannerService implements OnModuleInit {
 
     try {
       if (options.fullRescan) {
-        this.logger.log('Running full rescan: resetting library data before scanning.');
-        await this.resetLibraryData();
+        this.logger.log('Running full rescan: rescanning all folders while preserving track identities.');
       }
 
       this.logger.log(`Scanning: ${this.musicPath}`);
@@ -397,7 +462,7 @@ export class ScannerService implements OnModuleInit {
         }
       }
 
-      const previousDirectoryChecksums = await this.loadDirectoryChecksums();
+      const previousDirectoryChecksums = options.fullRescan ? {} : await this.loadDirectoryChecksums();
       const currentDirectoryChecksums: Record<string, string> = {};
       const changedDirectories: string[] = [];
       const totalDirectories = filesByDirectory.size;
@@ -454,17 +519,6 @@ export class ScannerService implements OnModuleInit {
           try {
           const fileStats = fs.statSync(filePath);
           const fileMtimeChecksum = this.buildFileFingerprintChecksum(fileStats);
-          const existingTrack = await this.prisma.track.findUnique({
-            where: { filePath },
-            select: {
-              id: true,
-              metadataChecksum: true,
-            },
-          });
-
-          if (existingTrack && existingTrack.metadataChecksum === fileMtimeChecksum) {
-            continue;
-          }
 
           const metadata = await mm.parseFile(filePath);
           const { common, format } = metadata;
@@ -501,6 +555,66 @@ export class ScannerService implements OnModuleInit {
 
           const albumYear = this.extractYear(common.date ?? common.year ?? releaseDate);
           const albumDate = albumYear ?? releaseDate;
+          const albumIdentityHash = this.buildAlbumIdentityHash({
+            albumTitle,
+            albumArtists,
+            albumDate,
+          });
+          const trackTitle = common.title || path.basename(filePath);
+          const identityHash = this.buildTrackIdentityHash({
+            albumIdentityHash,
+            title: trackTitle,
+            discNumber: common.disk.no,
+            trackNumber: common.track.no,
+          });
+
+          const [existingTrackByIdentity, existingTrackByPath] = await Promise.all([
+            this.prisma.track.findUnique({
+              where: { identityHash },
+              select: {
+                id: true,
+                filePath: true,
+                metadataChecksum: true,
+              },
+            }),
+            this.prisma.track.findUnique({
+              where: { filePath },
+              select: {
+                id: true,
+                filePath: true,
+                metadataChecksum: true,
+              },
+            }),
+          ]);
+
+          const existingTrack =
+            existingTrackByIdentity ??
+            existingTrackByPath;
+
+          if (
+            existingTrackByIdentity &&
+            existingTrackByPath &&
+            existingTrackByIdentity.id !== existingTrackByPath.id
+          ) {
+            this.logger.warn(
+              `Track identity collision detected for ${filePath}; reusing ${existingTrackByIdentity.id} and ignoring duplicate path row ${existingTrackByPath.id}.`,
+            );
+          }
+
+          if (existingTrack && existingTrack.metadataChecksum === fileMtimeChecksum) {
+            if (!existingTrackByIdentity || existingTrack.filePath !== filePath) {
+              await this.prisma.track.update({
+                where: { id: existingTrack.id },
+                data: {
+                  identityHash,
+                  filePath,
+                  fileName: path.basename(filePath),
+                },
+              });
+            }
+
+            continue;
+          }
 
           const coverFilename = this.saveCover(common.picture?.[0]);
           const replayGainTrack = this.getReplayGainValue(metadata, c.replaygain_track_gain, [
@@ -518,7 +632,11 @@ export class ScannerService implements OnModuleInit {
 
           const metadataChecksum = fileMtimeChecksum;
           const albumArtistConnections = await this.ensureArtists(albumArtists);
-          let album = await this.findAlbumByTitleAndArtists(albumTitle, albumArtists);
+          let album = await this.findAlbumByIdentity(albumIdentityHash);
+
+          if (!album) {
+            album = await this.findAlbumByTitleAndArtists(albumTitle, albumArtists);
+          }
 
           if (!album) {
             album = await this.prisma.album.create({
@@ -527,6 +645,7 @@ export class ScannerService implements OnModuleInit {
                 date: true,
               },
               data: {
+                identityHash: albumIdentityHash,
                 title: albumTitle,
                 date: albumDate,
                 artists: {
@@ -538,6 +657,8 @@ export class ScannerService implements OnModuleInit {
             await this.prisma.album.update({
               where: { id: album.id },
               data: {
+                identityHash: albumIdentityHash,
+                title: albumTitle,
                 date: album.date ?? albumDate,
                 artists: {
                   set: albumArtistConnections,
@@ -558,6 +679,7 @@ export class ScannerService implements OnModuleInit {
               where: { id: existingTrack.id },
               data: {
                 title: common.title || path.basename(filePath),
+                identityHash,
                 number: common.track.no || null,
                 totalNumber: common.track.of || null,
                 discNumber: common.disk.no || 1,
@@ -587,6 +709,7 @@ export class ScannerService implements OnModuleInit {
             await this.prisma.track.create({
               data: {
                 title: common.title || path.basename(filePath),
+                identityHash,
                 number: common.track.no || null,
                 totalNumber: common.track.of || null,
                 discNumber: common.disk.no || 1,
