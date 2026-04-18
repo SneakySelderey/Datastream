@@ -6,6 +6,99 @@ import { createHash } from 'crypto';
 export class AlbumsService {
   constructor(private prisma: PrismaService) {}
 
+  private chunkItems<T>(items: T[], size: number): T[][];
+  private chunkItems<T>(items: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let index = 0; index < items.length; index += size) {
+      chunks.push(items.slice(index, index + size));
+    }
+
+    return chunks;
+  }
+
+  private async getAlbumsMeta() {
+    const [allGenres, allAlbumsDates] = await Promise.all([
+      this.prisma.genre.findMany({ select: { name: true } }),
+      this.prisma.album.findMany({
+        select: { date: true },
+        distinct: ['date'],
+        where: { date: { not: null } },
+      }),
+    ]);
+
+    const uniqueYears = [...new Set(
+      allAlbumsDates.map((album) => album.date?.substring(0, 4)).filter(Boolean)
+    )].sort().reverse();
+
+    return {
+      genres: allGenres.map((genreRecord) => genreRecord.name),
+      years: uniqueYears,
+    };
+  }
+
+  private async getAlbumsPage(albumIds: string[], orderBy: any = { title: 'asc' }) {
+    if (albumIds.length === 0) {
+      return [];
+    }
+
+    const albums = await this.prisma.album.findMany({
+      where: { id: { in: albumIds } },
+      include: {
+        artists: true,
+        tracks: {
+          select: { coverPath: true },
+          orderBy: { number: 'asc' },
+          take: 1,
+        },
+      },
+      orderBy,
+    });
+
+    const positionById = new Map(albumIds.map((id, index) => [id, index]));
+
+    return albums
+      .map((album) => ({
+        ...album,
+        coverPath: album.tracks[0]?.coverPath ?? null,
+      }))
+      .sort((left, right) => (positionById.get(left.id) ?? 0) - (positionById.get(right.id) ?? 0));
+  }
+
+  private async getAlbumTrackStats(albumIds: string[], userId: string) {
+    const tracks: Array<{
+      albumId: string | null;
+      playStats: Array<{
+        plays: number;
+        updatedAt: Date;
+      }>;
+    }> = [];
+    const albumIdChunks = this.chunkItems(albumIds, 200);
+
+    for (const albumIdChunk of albumIdChunks) {
+      const chunkTracks = await this.prisma.track.findMany({
+        where: {
+          albumId: {
+            in: albumIdChunk,
+          },
+        },
+        select: {
+          albumId: true,
+          playStats: {
+            where: { userId },
+            select: {
+              plays: true,
+              updatedAt: true,
+            },
+          },
+        },
+      });
+
+      tracks.push(...chunkTracks);
+    }
+
+    return tracks;
+  }
+
   async findAll(
     userId: string,
     page: number,
@@ -47,172 +140,128 @@ export class AlbumsService {
     }
 
     if (order === 'most-played') {
-      const albums = await this.prisma.album.findMany({
+      const matchingAlbums = await this.prisma.album.findMany({
         where,
-        include: {
-          artists: true,
-          tracks: {
-            include: {
-              playStats: { where: { userId } },
-            },
-            orderBy: { number: 'asc' },
-          },
+        select: {
+          id: true,
+          title: true,
         },
       });
+      const trackStats = await this.getAlbumTrackStats(
+        matchingAlbums.map((album) => album.id),
+        userId,
+      );
+      const totalPlaysByAlbumId = new Map<string, number>();
 
-      const withPlays = albums.map(album => {
-        const totalPlays = album.tracks.reduce((sum, track) => {
-          const plays = track.playStats.reduce((acc, ps) => acc + ps.plays, 0);
-          return sum + plays;
-        }, 0);
+      for (const track of trackStats) {
+        if (!track.albumId) continue;
 
-        const coverPath = album.tracks.find(t => t.coverPath)?.coverPath ?? null;
-        return { ...album, coverPath, totalPlays };
-      });
+        const trackPlays = track.playStats.reduce((sum, playStat) => sum + playStat.plays, 0);
+        totalPlaysByAlbumId.set(
+          track.albumId,
+          (totalPlaysByAlbumId.get(track.albumId) ?? 0) + trackPlays,
+        );
+      }
 
-      const sorted = withPlays.sort((a, b) => {
-        if (b.totalPlays !== a.totalPlays) return b.totalPlays - a.totalPlays;
-        return a.title.localeCompare(b.title);
-      });
+      const sortedIds = [...matchingAlbums]
+        .sort((a, b) => {
+          const aPlays = totalPlaysByAlbumId.get(a.id) ?? 0;
+          const bPlays = totalPlaysByAlbumId.get(b.id) ?? 0;
 
-      const paged = sorted.slice(skip, skip + Number(limit)).map(({ totalPlays, ...album }) => album);
-
-      const allGenres = await this.prisma.genre.findMany({ select: { name: true } });
-      const allAlbumsDates = await this.prisma.album.findMany({
-        select: { date: true },
-        distinct: ['date'],
-        where: { date: { not: null } },
-      });
-
-      const uniqueYears = [...new Set(
-        allAlbumsDates.map(a => a.date?.substring(0, 4)).filter(Boolean)
-      )].sort().reverse();
+          if (bPlays !== aPlays) return bPlays - aPlays;
+          return a.title.localeCompare(b.title);
+        })
+        .map((album) => album.id);
+      const pagedIds = sortedIds.slice(skip, skip + Number(limit));
+      const [pagedAlbums, meta] = await Promise.all([
+        this.getAlbumsPage(pagedIds),
+        this.getAlbumsMeta(),
+      ]);
 
       return {
-        data: paged,
-        total: sorted.length,
-        meta: {
-          genres: allGenres.map(g => g.name),
-          years: uniqueYears,
-        },
+        data: pagedAlbums,
+        total: sortedIds.length,
+        meta,
       };
     }
 
     if (order === 'recently-played') {
-      const [albums, allGenres, allAlbumsDates] = await Promise.all([
-        this.prisma.album.findMany({
-          where,
-          include: {
-            artists: true,
-            tracks: {
-              select: {
-                coverPath: true,
-                playStats: {
-                  where: { userId },
-                  select: { updatedAt: true },
-                },
-              },
-              orderBy: { number: 'asc' },
-            },
-          },
-        }),
-        this.prisma.genre.findMany({ select: { name: true } }),
-        this.prisma.album.findMany({
-          select: { date: true },
-          distinct: ['date'],
-          where: { date: { not: null } },
-        }),
+      const matchingAlbums = await this.prisma.album.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+        },
+      });
+      const trackStats = await this.getAlbumTrackStats(
+        matchingAlbums.map((album) => album.id),
+        userId,
+      );
+      const lastPlayedAtByAlbumId = new Map<string, Date>();
+
+      for (const track of trackStats) {
+        if (!track.albumId) continue;
+
+        for (const playStat of track.playStats) {
+          const currentLatest = lastPlayedAtByAlbumId.get(track.albumId);
+          if (!currentLatest || playStat.updatedAt > currentLatest) {
+            lastPlayedAtByAlbumId.set(track.albumId, playStat.updatedAt);
+          }
+        }
+      }
+
+      const sortedIds = [...matchingAlbums]
+        .sort((a, b) => {
+          const aPlayed = lastPlayedAtByAlbumId.get(a.id)?.getTime() ?? 0;
+          const bPlayed = lastPlayedAtByAlbumId.get(b.id)?.getTime() ?? 0;
+
+          if (aPlayed !== bPlayed) return bPlayed - aPlayed;
+          return a.title.localeCompare(b.title);
+        })
+        .map((album) => album.id);
+      const pagedIds = sortedIds.slice(skip, skip + Number(limit));
+      const [pagedAlbums, meta] = await Promise.all([
+        this.getAlbumsPage(pagedIds),
+        this.getAlbumsMeta(),
       ]);
 
-      const withLastPlayed = albums.map((album) => {
-        const lastPlayedAt = album.tracks.reduce<Date | null>((latest, track) => {
-          const playedAt = track.playStats[0]?.updatedAt ?? null;
-          if (!playedAt) return latest;
-          if (!latest || playedAt > latest) return playedAt;
-          return latest;
-        }, null);
-
-        const coverPath = album.tracks.find((track) => track.coverPath)?.coverPath ?? null;
-        return { ...album, coverPath, lastPlayedAt };
-      });
-
-      const sorted = withLastPlayed.sort((a, b) => {
-        const aPlayed = a.lastPlayedAt ? a.lastPlayedAt.getTime() : 0;
-        const bPlayed = b.lastPlayedAt ? b.lastPlayedAt.getTime() : 0;
-
-        if (aPlayed !== bPlayed) return bPlayed - aPlayed;
-        return a.title.localeCompare(b.title);
-      });
-
-      const paged = sorted
-        .slice(skip, skip + Number(limit))
-        .map(({ lastPlayedAt, ...album }) => album);
-
-      const uniqueYears = [...new Set(
-        allAlbumsDates.map(a => a.date?.substring(0, 4)).filter(Boolean)
-      )].sort().reverse();
-
       return {
-        data: paged,
-        total: sorted.length,
-        meta: {
-          genres: allGenres.map(g => g.name),
-          years: uniqueYears,
-        },
+        data: pagedAlbums,
+        total: sortedIds.length,
+        meta,
       };
     }
 
     if (order === 'random') {
-      const [albums, allGenres, allAlbumsDates] = await Promise.all([
+      const [matchingAlbums, meta] = await Promise.all([
         this.prisma.album.findMany({
           where,
-          include: {
-            artists: true,
-            tracks: {
-              select: { coverPath: true },
-              orderBy: { number: 'asc' },
-              take: 1,
-            },
+          select: {
+            id: true,
           },
         }),
-        this.prisma.genre.findMany({ select: { name: true } }),
-        this.prisma.album.findMany({
-          select: { date: true },
-          distinct: ['date'],
-          where: { date: { not: null } },
-        }),
+        this.getAlbumsMeta(),
       ]);
 
       const seed = randomSeed || 'albums-random-default-seed';
-      const sortedBySeed = albums
+      const sortedIds = matchingAlbums
         .map((album) => ({
-          album,
+          id: album.id,
           key: createHash('sha256').update(`${seed}:${album.id}`).digest('hex'),
         }))
-        .sort((a, b) => a.key.localeCompare(b.key) || a.album.id.localeCompare(b.album.id))
-        .map((entry) => entry.album);
-
-      const paged = sortedBySeed.slice(skip, skip + Number(limit));
-      const data = paged.map((album) => {
-        const coverPath = album.tracks[0]?.coverPath ?? null;
-        return { ...album, coverPath };
-      });
-
-      const uniqueYears = [...new Set(
-        allAlbumsDates.map(a => a.date?.substring(0, 4)).filter(Boolean)
-      )].sort().reverse();
+        .sort((a, b) => a.key.localeCompare(b.key) || a.id.localeCompare(b.id))
+        .map((entry) => entry.id);
+      const pagedIds = sortedIds.slice(skip, skip + Number(limit));
+      const data = await this.getAlbumsPage(pagedIds);
 
       return {
         data,
-        total: sortedBySeed.length,
-        meta: {
-          genres: allGenres.map(g => g.name),
-          years: uniqueYears,
-        },
+        total: sortedIds.length,
+        meta,
       };
     }
 
-    const [albums, total, allGenres, allAlbumsDates] = await Promise.all([
+    const [albums, total, meta] = await Promise.all([
       this.prisma.album.findMany({
         skip,
         take: Number(limit),
@@ -228,12 +277,7 @@ export class AlbumsService {
         orderBy,
       }),
       this.prisma.album.count({ where }),
-      this.prisma.genre.findMany({ select: { name: true } }),
-      this.prisma.album.findMany({
-        select: { date: true },
-        distinct: ['date'],
-        where: { date: { not: null } },
-      }),
+      this.getAlbumsMeta(),
     ]);
 
     const data = albums.map(album => {
@@ -241,17 +285,10 @@ export class AlbumsService {
       return { ...album, coverPath };
     });
 
-    const uniqueYears = [...new Set(
-      allAlbumsDates.map(a => a.date?.substring(0, 4)).filter(Boolean)
-    )].sort().reverse();
-
     return {
       data,
       total,
-      meta: {
-        genres: allGenres.map(g => g.name),
-        years: uniqueYears,
-      },
+      meta,
     };
   }
   
