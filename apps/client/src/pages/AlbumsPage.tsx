@@ -16,8 +16,9 @@ const AlbumsPage = () => {
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const initialPage = Number.parseInt(searchParams.get('page') || '1', 10);
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(Number.isNaN(initialPage) || initialPage < 1 ? 1 : initialPage);
   const [itemsPerPage, setItemsPerPage] = useLocalStorage<number>('itemsPerPage', 18);
 
   const [filters, setFilters] = useState<FilterState>({
@@ -34,6 +35,13 @@ const AlbumsPage = () => {
 
   const orderMode = (searchParams.get('order') as OrderMode) || 'default';
 
+  useEffect(() => {
+    const nextPage = Number.parseInt(searchParams.get('page') || '1', 10);
+    const normalizedPage = Number.isNaN(nextPage) || nextPage < 1 ? 1 : nextPage;
+
+    setCurrentPage((prev) => (prev === normalizedPage ? prev : normalizedPage));
+  }, [searchParams]);
+
   const { albums, total, isLoading, error, availableGenres, availableYears } = useAlbums(
     currentPage,
     itemsPerPage,
@@ -44,13 +52,14 @@ const AlbumsPage = () => {
   useEffect(() => {
     const params: Record<string, string> = {};
     if (orderMode) params.order = orderMode;
+    if (currentPage > 1) params.page = String(currentPage);
 
     if (effectiveFilters.genre) params.genre = effectiveFilters.genre;
     if (effectiveFilters.search) params.search = effectiveFilters.search;
     if (effectiveFilters.year) params.year = effectiveFilters.year;
     
     setSearchParams(params, { replace: true });
-  }, [effectiveFilters, orderMode, setSearchParams]);
+  }, [currentPage, effectiveFilters, orderMode, setSearchParams]);
 
   const handleOrderChange = (newOrder: string) => {
     setSearchParams(prev => {
@@ -82,7 +91,14 @@ const AlbumsPage = () => {
   };
 
   const handleSelectAlbum = (album: Album) => {
-    navigate(`/albums/${album.id}`);
+    navigate(`/albums/${album.id}`, {
+      state: {
+        from: {
+          pathname: '/albums',
+          search: searchParams.toString() ? `?${searchParams.toString()}` : '',
+        },
+      },
+    });
   };
 
   return (
