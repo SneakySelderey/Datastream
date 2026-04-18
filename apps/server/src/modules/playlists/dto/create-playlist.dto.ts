@@ -1,4 +1,4 @@
 export class CreatePlaylistDto {
-  title: string;
-  trackIds: string[];
+  title!: string;
+  trackIds!: string[];
 }

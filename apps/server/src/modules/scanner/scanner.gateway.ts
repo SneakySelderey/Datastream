@@ -24,7 +24,7 @@ export interface ScanProgressPayload {
 @Public()
 export class ScannerGateway {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   private lastProgress: ScanProgressPayload = {
     status: 'idle',

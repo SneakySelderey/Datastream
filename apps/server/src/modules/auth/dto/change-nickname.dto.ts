@@ -1,4 +1,4 @@
 export class ChangeNicknameDto {
-  id: string;
-  newName: string;
+  id!: string;
+  newName!: string;
 }
