@@ -341,23 +341,8 @@ export class ScannerService implements OnModuleInit {
       const previousDirectoryChecksums = await this.loadDirectoryChecksums();
       const currentDirectoryChecksums: Record<string, string> = {};
       const changedDirectories: string[] = [];
-
-      for (const [directoryPath, directoryFiles] of filesByDirectory) {
-        const checksum = this.buildDirectoryChecksum(directoryFiles);
-        currentDirectoryChecksums[directoryPath] = checksum;
-
-        if (previousDirectoryChecksums[directoryPath] !== checksum) {
-          changedDirectories.push(directoryPath);
-        }
-      }
-
-      const removedDirectories = Object.keys(previousDirectoryChecksums).filter(
-        (directoryPath) => !filesByDirectory.has(directoryPath),
-      );
-
-      await this.removeDirectoryChecksums(removedDirectories);
-
       const totalDirectories = filesByDirectory.size;
+      let completedDirectories = 0;
 
       this.emitProgress({
         status: 'running',
@@ -366,19 +351,40 @@ export class ScannerService implements OnModuleInit {
         startedAt,
       });
 
+      for (const [directoryPath, directoryFiles] of filesByDirectory) {
+        const checksum = this.buildDirectoryChecksum(directoryFiles);
+        currentDirectoryChecksums[directoryPath] = checksum;
+
+        if (previousDirectoryChecksums[directoryPath] !== checksum) {
+          changedDirectories.push(directoryPath);
+        } else {
+          completedDirectories += 1;
+          this.emitProgress({
+            status: 'running',
+            foldersScanned: completedDirectories,
+            totalFolders: totalDirectories,
+            startedAt,
+          });
+        }
+      }
+
+      const removedDirectories = Object.keys(previousDirectoryChecksums).filter(
+        (directoryPath) => !filesByDirectory.has(directoryPath),
+      );
+
+      await this.removeDirectoryChecksums(removedDirectories);
       this.logger.log(
         `Found ${files.length} files in ${filesByDirectory.size} directories. ${changedDirectories.length} changed/new directories, ${removedDirectories.length} removed directories.`,
       );
       const mm = await import('music-metadata');
 
-      let scannedDirectories = 0;
       const failedDirectories = new Set<string>();
 
       for (const directoryPath of changedDirectories) {
-        scannedDirectories += 1;
+        completedDirectories += 1;
         this.emitProgress({
           status: 'running',
-          foldersScanned: scannedDirectories,
+          foldersScanned: completedDirectories,
           totalFolders: totalDirectories,
           startedAt,
         });
