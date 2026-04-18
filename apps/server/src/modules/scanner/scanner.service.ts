@@ -291,6 +291,25 @@ export class ScannerService implements OnModuleInit {
     }
   }
 
+  private async pruneOrphanedLibraryEntities() {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.album.deleteMany({
+        where: { tracks: { none: {} } },
+      });
+
+      await tx.artist.deleteMany({
+        where: {
+          tracks: { none: {} },
+          albums: { none: {} },
+        },
+      });
+
+      await tx.genre.deleteMany({
+        where: { tracks: { none: {} } },
+      });
+    });
+  }
+
   private buildDirectoryChecksum(filesInDirectory: string[]): string {
     const hash = crypto.createHash('md5');
 
@@ -625,22 +644,12 @@ export class ScannerService implements OnModuleInit {
           await tx.track.deleteMany({
             where: { id: { in: missingIds } },
           });
-
-          await tx.artist.deleteMany({
-            where: { tracks: { none: {} } },
-          });
-
-          await tx.album.deleteMany({
-            where: { tracks: { none: {} } },
-          });
-
-          await tx.genre.deleteMany({
-            where: { tracks: { none: {} } },
-          });
         });
 
         this.logger.log(`Removed ${missingIds.length} missing tracks.`);
       }
+
+      await this.pruneOrphanedLibraryEntities();
 
       const nextDirectoryChecksums = { ...currentDirectoryChecksums };
       for (const directoryPath of failedDirectories) {
