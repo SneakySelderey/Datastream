@@ -1,5 +1,5 @@
 export type Theme = 'light' | 'dark';
-export type ScanStatus = 'idle' | 'running' | 'completed' | 'failed';
+export type ScanStatus = 'idle' | 'running' | 'finalizing' | 'completed' | 'failed';
 
 export interface ScanProgress {
   status: ScanStatus;

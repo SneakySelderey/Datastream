@@ -29,7 +29,9 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
   const [isRescanMenuOpen, setIsRescanMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const { scanProgress, lastRescanInfo } = usePlayer();
-  const isRescanning = scanProgress.status === 'running' || isRescanRequestInFlight;
+  const isScanActive =
+    scanProgress.status === 'running' || scanProgress.status === 'finalizing';
+  const isRescanning = isScanActive || isRescanRequestInFlight;
 
   const generatePageTitle = (): string => {
     const { pathname } = location;
@@ -152,12 +154,14 @@ const Header: React.FC<HeaderProps> = ({ onChangeTheme, onToggleSidebar }) => {
                 </button>
               </div>
 
-              {scanProgress.status === 'running' && (
+              {isScanActive && (
                 <p className='mb-3 text-sm text-fg/80'>
-                  {t('scanProgress', {
-                    scanned: scanProgress.foldersScanned,
-                    total: scanProgress.totalFolders,
-                  })}
+                  {scanProgress.status === 'finalizing'
+                    ? t('scanFinalizing', 'Finalizing scan...')
+                    : t('scanProgress', {
+                        scanned: scanProgress.foldersScanned,
+                        total: scanProgress.totalFolders,
+                      })}
                 </p>
               )}
 

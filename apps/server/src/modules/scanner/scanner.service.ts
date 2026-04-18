@@ -321,6 +321,24 @@ export class ScannerService implements OnModuleInit {
     this.scannerGateway.emitProgress(progress);
   }
 
+  private emitDirectoryProgress(completedDirectories: number, totalDirectories: number, startedAt: string) {
+    this.emitProgress({
+      status: 'running',
+      foldersScanned: completedDirectories,
+      totalFolders: totalDirectories,
+      startedAt,
+    });
+  }
+
+  private emitFinalizingProgress(totalDirectories: number, startedAt: string) {
+    this.emitProgress({
+      status: 'finalizing',
+      foldersScanned: totalDirectories,
+      totalFolders: totalDirectories,
+      startedAt,
+    });
+  }
+
   private getErrorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
   }
@@ -464,32 +482,250 @@ export class ScannerService implements OnModuleInit {
 
       const previousDirectoryChecksums = options.fullRescan ? {} : await this.loadDirectoryChecksums();
       const currentDirectoryChecksums: Record<string, string> = {};
-      const changedDirectories: string[] = [];
       const totalDirectories = filesByDirectory.size;
+      let changedDirectoriesCount = 0;
       let completedDirectories = 0;
 
-      this.emitProgress({
-        status: 'running',
-        foldersScanned: 0,
-        totalFolders: totalDirectories,
-        startedAt,
-      });
+      this.emitDirectoryProgress(0, totalDirectories, startedAt);
+
+      const mm = await import('music-metadata');
+      const failedDirectories = new Set<string>();
 
       for (const [directoryPath, directoryFiles] of filesByDirectory) {
         const checksum = this.buildDirectoryChecksum(directoryFiles);
         currentDirectoryChecksums[directoryPath] = checksum;
 
-        if (previousDirectoryChecksums[directoryPath] !== checksum) {
-          changedDirectories.push(directoryPath);
-        } else {
-          completedDirectories += 1;
-          this.emitProgress({
-            status: 'running',
-            foldersScanned: completedDirectories,
-            totalFolders: totalDirectories,
-            startedAt,
-          });
+        const hasDirectoryChanged = previousDirectoryChecksums[directoryPath] !== checksum;
+        if (hasDirectoryChanged) {
+          changedDirectoriesCount += 1;
+          for (const filePath of directoryFiles) {
+            try {
+              const fileStats = fs.statSync(filePath);
+              const fileMtimeChecksum = this.buildFileFingerprintChecksum(fileStats);
+
+              const metadata = await mm.parseFile(filePath);
+              const { common, format } = metadata;
+
+              const c = common as any;
+
+              const nativeTrackArtists = this.getNativeTagValues(metadata, ['ARTIST', 'ARTISTS']);
+              let trackArtists = this.normalizeArtists(common.artists ?? common.artist ?? nativeTrackArtists);
+              if (trackArtists.length === 0) {
+                trackArtists = ['Unknown Artist'];
+              }
+
+              const nativeAlbumArtists = this.getNativeTagValues(metadata, [
+                'ALBUMARTIST',
+                'ALBUM ARTIST',
+                'ALBUMARTISTS',
+                'ALBUM ARTISTS',
+              ]);
+              const albumArtistsFromCommon = this.normalizeArtists(c.albumartists ?? common.albumartist);
+              const albumArtistsFromNative = this.normalizeArtists(nativeAlbumArtists);
+              const albumArtists =
+                albumArtistsFromNative.length > 0
+                  ? albumArtistsFromNative
+                  : albumArtistsFromCommon.length > 0
+                    ? albumArtistsFromCommon
+                    : trackArtists;
+
+              const genres = common.genre || [];
+              const albumTitle = common.album || 'Unknown Album';
+
+              let releaseDate: string | null = null;
+              if (common.date) releaseDate = common.date;
+              else if (common.year) releaseDate = common.year.toString() + '-01-01';
+
+              const albumYear = this.extractYear(common.date ?? common.year ?? releaseDate);
+              const albumDate = albumYear ?? releaseDate;
+              const albumIdentityHash = this.buildAlbumIdentityHash({
+                albumTitle,
+                albumArtists,
+                albumDate,
+              });
+              const trackTitle = common.title || path.basename(filePath);
+              const identityHash = this.buildTrackIdentityHash({
+                albumIdentityHash,
+                title: trackTitle,
+                discNumber: common.disk.no,
+                trackNumber: common.track.no,
+              });
+
+              const [existingTrackByIdentity, existingTrackByPath] = await Promise.all([
+                this.prisma.track.findUnique({
+                  where: { identityHash },
+                  select: {
+                    id: true,
+                    filePath: true,
+                    metadataChecksum: true,
+                  },
+                }),
+                this.prisma.track.findUnique({
+                  where: { filePath },
+                  select: {
+                    id: true,
+                    filePath: true,
+                    metadataChecksum: true,
+                  },
+                }),
+              ]);
+
+              const existingTrack = existingTrackByIdentity ?? existingTrackByPath;
+
+              if (
+                existingTrackByIdentity &&
+                existingTrackByPath &&
+                existingTrackByIdentity.id !== existingTrackByPath.id
+              ) {
+                this.logger.warn(
+                  `Track identity collision detected for ${filePath}; reusing ${existingTrackByIdentity.id} and ignoring duplicate path row ${existingTrackByPath.id}.`,
+                );
+              }
+
+              if (existingTrack && existingTrack.metadataChecksum === fileMtimeChecksum) {
+                if (!existingTrackByIdentity || existingTrack.filePath !== filePath) {
+                  await this.prisma.track.update({
+                    where: { id: existingTrack.id },
+                    data: {
+                      identityHash,
+                      filePath,
+                      fileName: path.basename(filePath),
+                    },
+                  });
+                }
+
+                continue;
+              }
+
+              const coverFilename = this.saveCover(common.picture?.[0]);
+              const replayGainTrack = this.getReplayGainValue(metadata, c.replaygain_track_gain, [
+                'REPLAYGAIN_TRACK_GAIN',
+              ]);
+              const replayGainAlbum = this.getReplayGainValue(metadata, c.replaygain_album_gain, [
+                'REPLAYGAIN_ALBUM_GAIN',
+              ]);
+              const replayPeakTrack = this.getReplayGainValue(metadata, c.replaygain_track_peak, [
+                'REPLAYGAIN_TRACK_PEAK',
+              ]);
+              const replayPeakAlbum = this.getReplayGainValue(metadata, c.replaygain_album_peak, [
+                'REPLAYGAIN_ALBUM_PEAK',
+              ]);
+
+              const metadataChecksum = fileMtimeChecksum;
+              const albumArtistConnections = await this.ensureArtists(albumArtists);
+              let album = await this.findAlbumByIdentity(albumIdentityHash);
+
+              if (!album) {
+                album = await this.findAlbumByTitleAndArtists(albumTitle, albumArtists);
+              }
+
+              if (!album) {
+                album = await this.prisma.album.create({
+                  select: {
+                    id: true,
+                    date: true,
+                  },
+                  data: {
+                    identityHash: albumIdentityHash,
+                    title: albumTitle,
+                    date: albumDate,
+                    artists: {
+                      connect: albumArtistConnections,
+                    },
+                  },
+                });
+              } else if (albumArtists.length > 0) {
+                await this.prisma.album.update({
+                  where: { id: album.id },
+                  data: {
+                    identityHash: albumIdentityHash,
+                    title: albumTitle,
+                    date: album.date ?? albumDate,
+                    artists: {
+                      set: albumArtistConnections,
+                    },
+                  },
+                });
+              }
+
+              if (!album) {
+                continue;
+              }
+
+              const artistConnections = await this.ensureArtists(trackArtists);
+              const genreConnections = await this.ensureGenres(genres);
+
+              if (existingTrack) {
+                await this.prisma.track.update({
+                  where: { id: existingTrack.id },
+                  data: {
+                    title: common.title || path.basename(filePath),
+                    identityHash,
+                    number: common.track.no || null,
+                    totalNumber: common.track.of || null,
+                    discNumber: common.disk.no || 1,
+                    duration: format.duration || 0,
+                    bitrate: format.bitrate || 0,
+                    size: fileStats.size,
+                    filePath,
+                    fileName: path.basename(filePath),
+                    coverPath: coverFilename,
+                    format: format.container || 'unknown',
+                    date: releaseDate,
+                    replayGainTrack,
+                    replayGainAlbum,
+                    replayPeakTrack,
+                    replayPeakAlbum,
+                    metadataChecksum,
+                    album: { connect: { id: album.id } },
+                    genres: {
+                      set: genreConnections,
+                    },
+                    artists: {
+                      set: artistConnections,
+                    },
+                  },
+                });
+              } else {
+                await this.prisma.track.create({
+                  data: {
+                    title: common.title || path.basename(filePath),
+                    identityHash,
+                    number: common.track.no || null,
+                    totalNumber: common.track.of || null,
+                    discNumber: common.disk.no || 1,
+                    duration: format.duration || 0,
+                    bitrate: format.bitrate || 0,
+                    size: fileStats.size,
+                    filePath,
+                    fileName: path.basename(filePath),
+                    coverPath: coverFilename,
+                    format: format.container || 'unknown',
+                    date: releaseDate,
+                    replayGainTrack,
+                    replayGainAlbum,
+                    replayPeakTrack,
+                    replayPeakAlbum,
+                    metadataChecksum,
+                    album: { connect: { id: album.id } },
+                    genres: {
+                      connect: genreConnections,
+                    },
+                    artists: {
+                      connect: artistConnections,
+                    },
+                  },
+                });
+              }
+            } catch (e) {
+              failedDirectories.add(directoryPath);
+              this.logger.error(`Error processing ${filePath}: ${this.getErrorMessage(e)}`);
+            }
+          }
         }
+
+        completedDirectories += 1;
+        this.emitDirectoryProgress(completedDirectories, totalDirectories, startedAt);
       }
 
       const removedDirectories = Object.keys(previousDirectoryChecksums).filter(
@@ -498,250 +734,10 @@ export class ScannerService implements OnModuleInit {
 
       await this.removeDirectoryChecksums(removedDirectories);
       this.logger.log(
-        `Found ${files.length} files in ${filesByDirectory.size} directories. ${changedDirectories.length} changed/new directories, ${removedDirectories.length} removed directories.`,
+        `Found ${files.length} files in ${filesByDirectory.size} directories. ${changedDirectoriesCount} changed/new directories, ${removedDirectories.length} removed directories.`,
       );
-      const mm = await import('music-metadata');
 
-      const failedDirectories = new Set<string>();
-
-      for (const directoryPath of changedDirectories) {
-        completedDirectories += 1;
-        this.emitProgress({
-          status: 'running',
-          foldersScanned: completedDirectories,
-          totalFolders: totalDirectories,
-          startedAt,
-        });
-
-        const directoryFiles = filesByDirectory.get(directoryPath) ?? [];
-
-        for (const filePath of directoryFiles) {
-          try {
-          const fileStats = fs.statSync(filePath);
-          const fileMtimeChecksum = this.buildFileFingerprintChecksum(fileStats);
-
-          const metadata = await mm.parseFile(filePath);
-          const { common, format } = metadata;
-
-          const c = common as any;
-
-          const nativeTrackArtists = this.getNativeTagValues(metadata, ['ARTIST', 'ARTISTS']);
-          let trackArtists = this.normalizeArtists(common.artists ?? common.artist ?? nativeTrackArtists);
-          if (trackArtists.length === 0) {
-            trackArtists = ['Unknown Artist'];
-          }
-
-          const nativeAlbumArtists = this.getNativeTagValues(metadata, [
-            'ALBUMARTIST',
-            'ALBUM ARTIST',
-            'ALBUMARTISTS',
-            'ALBUM ARTISTS',
-          ]);
-          const albumArtistsFromCommon = this.normalizeArtists(c.albumartists ?? common.albumartist);
-          const albumArtistsFromNative = this.normalizeArtists(nativeAlbumArtists);
-          const albumArtists =
-            albumArtistsFromNative.length > 0
-              ? albumArtistsFromNative
-              : albumArtistsFromCommon.length > 0
-              ? albumArtistsFromCommon
-              : trackArtists;
-
-          const genres = common.genre || [];
-          const albumTitle = common.album || 'Unknown Album';
-
-          let releaseDate: string | null = null;
-          if (common.date) releaseDate = common.date;
-          else if (common.year) releaseDate = common.year.toString() + '-01-01';
-
-          const albumYear = this.extractYear(common.date ?? common.year ?? releaseDate);
-          const albumDate = albumYear ?? releaseDate;
-          const albumIdentityHash = this.buildAlbumIdentityHash({
-            albumTitle,
-            albumArtists,
-            albumDate,
-          });
-          const trackTitle = common.title || path.basename(filePath);
-          const identityHash = this.buildTrackIdentityHash({
-            albumIdentityHash,
-            title: trackTitle,
-            discNumber: common.disk.no,
-            trackNumber: common.track.no,
-          });
-
-          const [existingTrackByIdentity, existingTrackByPath] = await Promise.all([
-            this.prisma.track.findUnique({
-              where: { identityHash },
-              select: {
-                id: true,
-                filePath: true,
-                metadataChecksum: true,
-              },
-            }),
-            this.prisma.track.findUnique({
-              where: { filePath },
-              select: {
-                id: true,
-                filePath: true,
-                metadataChecksum: true,
-              },
-            }),
-          ]);
-
-          const existingTrack =
-            existingTrackByIdentity ??
-            existingTrackByPath;
-
-          if (
-            existingTrackByIdentity &&
-            existingTrackByPath &&
-            existingTrackByIdentity.id !== existingTrackByPath.id
-          ) {
-            this.logger.warn(
-              `Track identity collision detected for ${filePath}; reusing ${existingTrackByIdentity.id} and ignoring duplicate path row ${existingTrackByPath.id}.`,
-            );
-          }
-
-          if (existingTrack && existingTrack.metadataChecksum === fileMtimeChecksum) {
-            if (!existingTrackByIdentity || existingTrack.filePath !== filePath) {
-              await this.prisma.track.update({
-                where: { id: existingTrack.id },
-                data: {
-                  identityHash,
-                  filePath,
-                  fileName: path.basename(filePath),
-                },
-              });
-            }
-
-            continue;
-          }
-
-          const coverFilename = this.saveCover(common.picture?.[0]);
-          const replayGainTrack = this.getReplayGainValue(metadata, c.replaygain_track_gain, [
-            'REPLAYGAIN_TRACK_GAIN',
-          ]);
-          const replayGainAlbum = this.getReplayGainValue(metadata, c.replaygain_album_gain, [
-            'REPLAYGAIN_ALBUM_GAIN',
-          ]);
-          const replayPeakTrack = this.getReplayGainValue(metadata, c.replaygain_track_peak, [
-            'REPLAYGAIN_TRACK_PEAK',
-          ]);
-          const replayPeakAlbum = this.getReplayGainValue(metadata, c.replaygain_album_peak, [
-            'REPLAYGAIN_ALBUM_PEAK',
-          ]);
-
-          const metadataChecksum = fileMtimeChecksum;
-          const albumArtistConnections = await this.ensureArtists(albumArtists);
-          let album = await this.findAlbumByIdentity(albumIdentityHash);
-
-          if (!album) {
-            album = await this.findAlbumByTitleAndArtists(albumTitle, albumArtists);
-          }
-
-          if (!album) {
-            album = await this.prisma.album.create({
-              select: {
-                id: true,
-                date: true,
-              },
-              data: {
-                identityHash: albumIdentityHash,
-                title: albumTitle,
-                date: albumDate,
-                artists: {
-                  connect: albumArtistConnections,
-                },
-              },
-            });
-          } else if (albumArtists.length > 0) {
-            await this.prisma.album.update({
-              where: { id: album.id },
-              data: {
-                identityHash: albumIdentityHash,
-                title: albumTitle,
-                date: album.date ?? albumDate,
-                artists: {
-                  set: albumArtistConnections,
-                },
-              },
-            });
-          }
-
-          if (!album) {
-            continue;
-          }
-
-          const artistConnections = await this.ensureArtists(trackArtists);
-          const genreConnections = await this.ensureGenres(genres);
-
-          if (existingTrack) {
-            await this.prisma.track.update({
-              where: { id: existingTrack.id },
-              data: {
-                title: common.title || path.basename(filePath),
-                identityHash,
-                number: common.track.no || null,
-                totalNumber: common.track.of || null,
-                discNumber: common.disk.no || 1,
-                duration: format.duration || 0,
-                bitrate: format.bitrate || 0,
-                size: fileStats.size,
-                filePath,
-                fileName: path.basename(filePath),
-                coverPath: coverFilename,
-                format: format.container || 'unknown',
-                date: releaseDate,
-                replayGainTrack,
-                replayGainAlbum,
-                replayPeakTrack,
-                replayPeakAlbum,
-                metadataChecksum,
-                album: { connect: { id: album.id } },
-                genres: {
-                  set: genreConnections,
-                },
-                artists: {
-                  set: artistConnections,
-                },
-              },
-            });
-          } else {
-            await this.prisma.track.create({
-              data: {
-                title: common.title || path.basename(filePath),
-                identityHash,
-                number: common.track.no || null,
-                totalNumber: common.track.of || null,
-                discNumber: common.disk.no || 1,
-                duration: format.duration || 0,
-                bitrate: format.bitrate || 0,
-                size: fileStats.size,
-                filePath,
-                fileName: path.basename(filePath),
-                coverPath: coverFilename,
-                format: format.container || 'unknown',
-                date: releaseDate,
-                replayGainTrack,
-                replayGainAlbum,
-                replayPeakTrack,
-                replayPeakAlbum,
-                metadataChecksum,
-                album: { connect: { id: album.id } },
-                genres: {
-                  connect: genreConnections,
-                },
-                artists: {
-                  connect: artistConnections,
-                },
-              },
-            });
-          }
-          } catch (e) {
-            failedDirectories.add(directoryPath);
-            this.logger.error(`Error processing ${filePath}: ${this.getErrorMessage(e)}`);
-          }
-        }
-      }
+      this.emitFinalizingProgress(totalDirectories, startedAt);
 
       const existingTracks = await this.prisma.track.findMany({
         select: { id: true, filePath: true },

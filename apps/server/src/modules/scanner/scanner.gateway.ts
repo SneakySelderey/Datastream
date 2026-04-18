@@ -2,7 +2,7 @@ import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Public } from '../auth/public.decorator';
 
-export type ScanStatus = 'idle' | 'running' | 'completed' | 'failed';
+export type ScanStatus = 'idle' | 'running' | 'finalizing' | 'completed' | 'failed';
 
 export interface ScanProgressPayload {
   status: ScanStatus;
