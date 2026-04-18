@@ -101,6 +101,53 @@ export class ScannerService implements OnModuleInit {
     return Array.from(new Set(normalized));
   }
 
+  private normalizeArtistSet(names: string[]): string[] {
+    return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+  }
+
+  private hasSameArtists(left: string[], right: string[]): boolean {
+    const normalizedLeft = this.normalizeArtistSet(left);
+    const normalizedRight = this.normalizeArtistSet(right);
+
+    if (normalizedLeft.length !== normalizedRight.length) {
+      return false;
+    }
+
+    return normalizedLeft.every((name, index) => name === normalizedRight[index]);
+  }
+
+  private async findAlbumByTitleAndArtists(title: string, artistNames: string[]) {
+    const albums = await this.prisma.album.findMany({
+      where: { title },
+      select: {
+        id: true,
+        date: true,
+        artists: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    const matchingAlbum =
+      albums.find((album) =>
+        this.hasSameArtists(
+          album.artists.map((artist) => artist.name),
+          artistNames,
+        ),
+      ) ?? null;
+
+    if (!matchingAlbum) {
+      return null;
+    }
+
+    return {
+      id: matchingAlbum.id,
+      date: matchingAlbum.date,
+    };
+  }
+
   private getNativeTagValues(metadata: any, tagIds: string[]): string[] {
     if (!metadata?.native) return [];
 
@@ -452,20 +499,14 @@ export class ScannerService implements OnModuleInit {
 
           const metadataChecksum = fileMtimeChecksum;
           const albumArtistConnections = await this.ensureArtists(albumArtists);
-
-          let album = await this.prisma.album.findFirst({
-            where: {
-              title: albumTitle,
-              ...(albumYear
-                ? {
-                    date: albumYear,
-                  }
-                : { date: null }),
-            },
-          });
+          let album = await this.findAlbumByTitleAndArtists(albumTitle, albumArtists);
 
           if (!album) {
             album = await this.prisma.album.create({
+              select: {
+                id: true,
+                date: true,
+              },
               data: {
                 title: albumTitle,
                 date: albumDate,
@@ -478,12 +519,16 @@ export class ScannerService implements OnModuleInit {
             await this.prisma.album.update({
               where: { id: album.id },
               data: {
-                date: albumDate,
+                date: album.date ?? albumDate,
                 artists: {
                   set: albumArtistConnections,
                 },
               },
             });
+          }
+
+          if (!album) {
+            continue;
           }
 
           const artistConnections = await this.ensureArtists(trackArtists);
