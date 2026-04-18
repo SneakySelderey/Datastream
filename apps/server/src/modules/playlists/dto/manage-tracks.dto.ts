@@ -1,3 +1,3 @@
 export class ManageTracksDto {
-  trackIds: string[];
+  trackIds!: string[];
 }
