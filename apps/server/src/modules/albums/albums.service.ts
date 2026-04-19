@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { createHash } from 'crypto';
+import {
+  matchesNormalizedSearch,
+  normalizeSearchQuery,
+} from '../../common/search-normalization';
 
 @Injectable()
 export class AlbumsService {
@@ -26,9 +30,15 @@ export class AlbumsService {
       }),
     ]);
 
-    const uniqueYears = [...new Set(
-      allAlbumsDates.map((album) => album.date?.substring(0, 4)).filter(Boolean)
-    )].sort().reverse();
+    const uniqueYears = [
+      ...new Set(
+        allAlbumsDates
+          .map((album) => album.date?.substring(0, 4))
+          .filter(Boolean),
+      ),
+    ]
+      .sort()
+      .reverse();
 
     return {
       genres: allGenres.map((genreRecord) => genreRecord.name),
@@ -36,7 +46,10 @@ export class AlbumsService {
     };
   }
 
-  private async getAlbumsPage(albumIds: string[], orderBy: any = { title: 'asc' }) {
+  private async getAlbumsPage(
+    albumIds: string[],
+    orderBy: any = { title: 'asc' },
+  ) {
     if (albumIds.length === 0) {
       return [];
     }
@@ -61,7 +74,10 @@ export class AlbumsService {
         ...album,
         coverPath: album.tracks[0]?.coverPath ?? null,
       }))
-      .sort((left, right) => (positionById.get(left.id) ?? 0) - (positionById.get(right.id) ?? 0));
+      .sort(
+        (left, right) =>
+          (positionById.get(left.id) ?? 0) - (positionById.get(right.id) ?? 0),
+      );
   }
 
   private async getAlbumTrackStats(albumIds: string[], userId: string) {
@@ -113,13 +129,7 @@ export class AlbumsService {
     const skip = (page - 1) * limit;
 
     const where: any = {};
-
-    if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { artists: { some: { name: { contains: search } } } },
-      ];
-    }
+    const normalizedSearch = normalizeSearchQuery(search);
 
     if (genre) {
       where.tracks = { some: { genres: { some: { name: genre } } } };
@@ -145,10 +155,17 @@ export class AlbumsService {
         select: {
           id: true,
           title: true,
+          artists: { select: { name: true } },
         },
       });
+      const searchedAlbums = matchingAlbums.filter((album) =>
+        matchesNormalizedSearch(
+          [album.title, ...album.artists.map((artist) => artist.name)],
+          normalizedSearch,
+        ),
+      );
       const trackStats = await this.getAlbumTrackStats(
-        matchingAlbums.map((album) => album.id),
+        searchedAlbums.map((album) => album.id),
         userId,
       );
       const totalPlaysByAlbumId = new Map<string, number>();
@@ -156,14 +173,17 @@ export class AlbumsService {
       for (const track of trackStats) {
         if (!track.albumId) continue;
 
-        const trackPlays = track.playStats.reduce((sum, playStat) => sum + playStat.plays, 0);
+        const trackPlays = track.playStats.reduce(
+          (sum, playStat) => sum + playStat.plays,
+          0,
+        );
         totalPlaysByAlbumId.set(
           track.albumId,
           (totalPlaysByAlbumId.get(track.albumId) ?? 0) + trackPlays,
         );
       }
 
-      const sortedIds = [...matchingAlbums]
+      const sortedIds = [...searchedAlbums]
         .sort((a, b) => {
           const aPlays = totalPlaysByAlbumId.get(a.id) ?? 0;
           const bPlays = totalPlaysByAlbumId.get(b.id) ?? 0;
@@ -191,10 +211,17 @@ export class AlbumsService {
         select: {
           id: true,
           title: true,
+          artists: { select: { name: true } },
         },
       });
+      const searchedAlbums = matchingAlbums.filter((album) =>
+        matchesNormalizedSearch(
+          [album.title, ...album.artists.map((artist) => artist.name)],
+          normalizedSearch,
+        ),
+      );
       const trackStats = await this.getAlbumTrackStats(
-        matchingAlbums.map((album) => album.id),
+        searchedAlbums.map((album) => album.id),
         userId,
       );
       const lastPlayedAtByAlbumId = new Map<string, Date>();
@@ -210,7 +237,7 @@ export class AlbumsService {
         }
       }
 
-      const sortedIds = [...matchingAlbums]
+      const sortedIds = [...searchedAlbums]
         .sort((a, b) => {
           const aPlayed = lastPlayedAtByAlbumId.get(a.id)?.getTime() ?? 0;
           const bPlayed = lastPlayedAtByAlbumId.get(b.id)?.getTime() ?? 0;
@@ -238,6 +265,8 @@ export class AlbumsService {
           where,
           select: {
             id: true,
+            title: true,
+            artists: { select: { name: true } },
           },
         }),
         this.getAlbumsMeta(),
@@ -245,6 +274,12 @@ export class AlbumsService {
 
       const seed = randomSeed || 'albums-random-default-seed';
       const sortedIds = matchingAlbums
+        .filter((album) =>
+          matchesNormalizedSearch(
+            [album.title, ...album.artists.map((artist) => artist.name)],
+            normalizedSearch,
+          ),
+        )
         .map((album) => ({
           id: album.id,
           key: createHash('sha256').update(`${seed}:${album.id}`).digest('hex'),
@@ -257,6 +292,44 @@ export class AlbumsService {
       return {
         data,
         total: sortedIds.length,
+        meta,
+      };
+    }
+
+    if (normalizedSearch) {
+      const [matchingAlbums, meta] = await Promise.all([
+        this.prisma.album.findMany({
+          where,
+          include: {
+            artists: true,
+            tracks: {
+              select: { coverPath: true },
+              orderBy: { number: 'asc' },
+              take: 1,
+            },
+          },
+          orderBy,
+        }),
+        this.getAlbumsMeta(),
+      ]);
+
+      const filteredAlbums = matchingAlbums.filter((album) =>
+        matchesNormalizedSearch(
+          [album.title, ...album.artists.map((artist) => artist.name)],
+          normalizedSearch,
+        ),
+      );
+
+      const data = filteredAlbums
+        .slice(skip, skip + Number(limit))
+        .map((album) => {
+          const coverPath = album.tracks[0]?.coverPath ?? null;
+          return { ...album, coverPath };
+        });
+
+      return {
+        data,
+        total: filteredAlbums.length,
         meta,
       };
     }
@@ -280,7 +353,7 @@ export class AlbumsService {
       this.getAlbumsMeta(),
     ]);
 
-    const data = albums.map(album => {
+    const data = albums.map((album) => {
       const coverPath = album.tracks[0]?.coverPath ?? null;
       return { ...album, coverPath };
     });
@@ -291,7 +364,7 @@ export class AlbumsService {
       meta,
     };
   }
-  
+
   async findOne(id: string, userId: string) {
     const album = await this.prisma.album.findUnique({
       where: { id },
@@ -308,7 +381,7 @@ export class AlbumsService {
         },
       },
     });
-    
+
     if (!album) return null;
 
     const tracks = album.tracks.map(({ playStats, ...rest }) => ({
@@ -316,7 +389,7 @@ export class AlbumsService {
       plays: playStats?.[0]?.plays ?? 0,
     }));
 
-    const coverPath = tracks.find(t => t.coverPath)?.coverPath ?? null;
+    const coverPath = tracks.find((t) => t.coverPath)?.coverPath ?? null;
     return { ...album, coverPath, tracks };
   }
 }

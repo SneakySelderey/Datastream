@@ -1,12 +1,16 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  ForbiddenException 
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
 import { UpdatePlaylistDto } from './dto/update-playlist.dto';
 import { ManageTracksDto } from './dto/manage-tracks.dto';
+import {
+  matchesNormalizedSearch,
+  normalizeSearchQuery,
+} from '../../common/search-normalization';
 
 @Injectable()
 export class PlaylistsService {
@@ -28,10 +32,7 @@ export class PlaylistsService {
 
   async findAll(userId: string, search?: string) {
     const where: any = { userId };
-    
-    if (search) {
-      where.title = { contains: search };
-    }
+    const normalizedSearch = normalizeSearchQuery(search);
 
     const playlists = await this.prisma.playlist.findMany({
       where,
@@ -46,7 +47,9 @@ export class PlaylistsService {
       orderBy: { title: 'asc' },
     });
 
-    return playlists;
+    return playlists.filter((playlist) =>
+      matchesNormalizedSearch([playlist.title], normalizedSearch),
+    );
   }
 
   async findOne(id: string, userId: string) {
@@ -65,7 +68,7 @@ export class PlaylistsService {
     });
 
     if (!playlist) throw new NotFoundException('Playlist not found');
-    
+
     if (playlist.userId !== userId) {
       throw new ForbiddenException('You do not have access to this playlist');
     }
@@ -81,7 +84,7 @@ export class PlaylistsService {
   async update(id: string, updatePlaylistDto: UpdatePlaylistDto) {
     return this.prisma.playlist.update({
       where: { id },
-      data: { title: updatePlaylistDto.title }
+      data: { title: updatePlaylistDto.title },
     });
   }
 
@@ -90,9 +93,9 @@ export class PlaylistsService {
       where: { id },
       data: {
         tracks: {
-          connect: dto.trackIds.map(trackId => ({ id: trackId }))
-        }
-      }
+          connect: dto.trackIds.map((trackId) => ({ id: trackId })),
+        },
+      },
     });
   }
 
@@ -101,12 +104,12 @@ export class PlaylistsService {
       where: { id },
       data: {
         tracks: {
-          disconnect: dto.trackIds.map(trackId => ({ id: trackId }))
-        }
-      }
+          disconnect: dto.trackIds.map((trackId) => ({ id: trackId })),
+        },
+      },
     });
   }
-  
+
   async remove(id: string) {
     return this.prisma.playlist.delete({ where: { id } });
   }

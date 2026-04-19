@@ -2,6 +2,10 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { createHash } from 'crypto';
+import {
+  matchesNormalizedSearch,
+  normalizeSearchQuery,
+} from '../../common/search-normalization';
 
 @Injectable()
 export class TracksService {
@@ -20,13 +24,7 @@ export class TracksService {
     const skip = (page - 1) * limit;
 
     const where: Prisma.TrackWhereInput = {};
-
-    if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { artists: { some: { name: { contains: search } } } }
-      ];
-    }
+    const normalizedSearch = normalizeSearchQuery(search);
 
     if (genre) {
       where.genres = { some: { name: genre } };
@@ -56,33 +54,46 @@ export class TracksService {
       });
 
       const sorted = tracks
+        .filter((track) =>
+          matchesNormalizedSearch(
+            [track.title, ...track.artists.map((artist) => artist.name)],
+            normalizedSearch,
+          ),
+        )
         .map(({ playStats, ...rest }) => ({
           ...rest,
           plays: playStats?.[0]?.plays ?? 0,
         }))
         .sort(
           (a, b) =>
-            b.plays - a.plays || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }),
+            b.plays - a.plays ||
+            a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }),
         );
 
       const data = sorted.slice(skip, skip + Number(limit));
 
-      const allGenres = await this.prisma.genre.findMany({ select: { name: true } });
+      const allGenres = await this.prisma.genre.findMany({
+        select: { name: true },
+      });
       const allTracksDates = await this.prisma.track.findMany({
         select: { date: true },
         distinct: ['date'],
         where: { date: { not: null } },
       });
 
-      const uniqueYears = [...new Set(
-        allTracksDates.map(t => t.date?.substring(0, 4)).filter(Boolean)
-      )].sort().reverse();
+      const uniqueYears = [
+        ...new Set(
+          allTracksDates.map((t) => t.date?.substring(0, 4)).filter(Boolean),
+        ),
+      ]
+        .sort()
+        .reverse();
 
       return {
         data,
         total: sorted.length,
         meta: {
-          genres: allGenres.map(g => g.name),
+          genres: allGenres.map((g) => g.name),
           years: uniqueYears,
         },
       };
@@ -103,6 +114,12 @@ export class TracksService {
       ]);
 
       const sorted = tracks
+        .filter((track) =>
+          matchesNormalizedSearch(
+            [track.title, ...track.artists.map((artist) => artist.name)],
+            normalizedSearch,
+          ),
+        )
         .map((track) => {
           const { playStats, ...rest } = track;
           return {
@@ -116,22 +133,28 @@ export class TracksService {
           const bPlayed = b.lastPlayedAt ? b.lastPlayedAt.getTime() : 0;
 
           if (aPlayed !== bPlayed) return bPlayed - aPlayed;
-          return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+          return a.title.localeCompare(b.title, undefined, {
+            sensitivity: 'base',
+          });
         });
 
       const data = sorted
         .slice(skip, skip + Number(limit))
         .map(({ lastPlayedAt, ...track }) => track);
 
-      const uniqueYears = [...new Set(
-        allTracksDates.map(t => t.date?.substring(0, 4)).filter(Boolean)
-      )].sort().reverse();
+      const uniqueYears = [
+        ...new Set(
+          allTracksDates.map((t) => t.date?.substring(0, 4)).filter(Boolean),
+        ),
+      ]
+        .sort()
+        .reverse();
 
       return {
         data,
         total: sorted.length,
         meta: {
-          genres: allGenres.map(g => g.name),
+          genres: allGenres.map((g) => g.name),
           years: uniqueYears,
         },
       };
@@ -153,11 +176,20 @@ export class TracksService {
 
       const seed = randomSeed || 'tracks-random-default-seed';
       const sortedBySeed = tracks
+        .filter((track) =>
+          matchesNormalizedSearch(
+            [track.title, ...track.artists.map((artist) => artist.name)],
+            normalizedSearch,
+          ),
+        )
         .map((track) => ({
           track,
           key: createHash('sha256').update(`${seed}:${track.id}`).digest('hex'),
         }))
-        .sort((a, b) => a.key.localeCompare(b.key) || a.track.id.localeCompare(b.track.id))
+        .sort(
+          (a, b) =>
+            a.key.localeCompare(b.key) || a.track.id.localeCompare(b.track.id),
+        )
         .map((entry) => entry.track);
 
       const data = sortedBySeed
@@ -167,15 +199,66 @@ export class TracksService {
           plays: playStats?.[0]?.plays ?? 0,
         }));
 
-      const uniqueYears = [...new Set(
-        allTracksDates.map(t => t.date?.substring(0, 4)).filter(Boolean)
-      )].sort().reverse();
+      const uniqueYears = [
+        ...new Set(
+          allTracksDates.map((t) => t.date?.substring(0, 4)).filter(Boolean),
+        ),
+      ]
+        .sort()
+        .reverse();
 
       return {
         data,
         total: sortedBySeed.length,
         meta: {
-          genres: allGenres.map(g => g.name),
+          genres: allGenres.map((g) => g.name),
+          years: uniqueYears,
+        },
+      };
+    }
+
+    if (normalizedSearch) {
+      const [matchingTracks, allGenres, allTracksDates] = await Promise.all([
+        this.prisma.track.findMany({
+          where,
+          orderBy,
+          include,
+        }),
+        this.prisma.genre.findMany({ select: { name: true } }),
+        this.prisma.track.findMany({
+          select: { date: true },
+          distinct: ['date'],
+          where: { date: { not: null } },
+        }),
+      ]);
+
+      const filteredTracks = matchingTracks.filter((track) =>
+        matchesNormalizedSearch(
+          [track.title, ...track.artists.map((artist) => artist.name)],
+          normalizedSearch,
+        ),
+      );
+
+      const data = filteredTracks
+        .slice(skip, skip + Number(limit))
+        .map(({ playStats, ...rest }) => ({
+          ...rest,
+          plays: playStats?.[0]?.plays ?? 0,
+        }));
+
+      const uniqueYears = [
+        ...new Set(
+          allTracksDates.map((t) => t.date?.substring(0, 4)).filter(Boolean),
+        ),
+      ]
+        .sort()
+        .reverse();
+
+      return {
+        data,
+        total: filteredTracks.length,
+        meta: {
+          genres: allGenres.map((g) => g.name),
           years: uniqueYears,
         },
       };
@@ -197,24 +280,30 @@ export class TracksService {
       plays: playStats?.[0]?.plays ?? 0,
     }));
 
-    const allGenres = await this.prisma.genre.findMany({ select: { name: true } });
-    const allTracksDates = await this.prisma.track.findMany({ 
-        select: { date: true }, 
-        distinct: ['date'],
-        where: { date: { not: null } }
+    const allGenres = await this.prisma.genre.findMany({
+      select: { name: true },
     });
-    
-    const uniqueYears = [...new Set(
-        allTracksDates.map(t => t.date?.substring(0, 4)).filter(Boolean)
-    )].sort().reverse();
+    const allTracksDates = await this.prisma.track.findMany({
+      select: { date: true },
+      distinct: ['date'],
+      where: { date: { not: null } },
+    });
+
+    const uniqueYears = [
+      ...new Set(
+        allTracksDates.map((t) => t.date?.substring(0, 4)).filter(Boolean),
+      ),
+    ]
+      .sort()
+      .reverse();
 
     return {
       data,
       total,
       meta: {
-        genres: allGenres.map(g => g.name),
-        years: uniqueYears
-      }
+        genres: allGenres.map((g) => g.name),
+        years: uniqueYears,
+      },
     };
   }
 
