@@ -488,23 +488,24 @@ export class ScannerService implements OnModuleInit {
       }
 
       const previousDirectoryChecksums = options.fullRescan ? {} : await this.loadDirectoryChecksums();
-      const currentDirectoryChecksums: Record<string, string> = {};
+      const changedDirectoryChecksums: Record<string, string> = {};
       const totalDirectories = filesByDirectory.size;
       let changedDirectoriesCount = 0;
       let completedDirectories = 0;
 
       await this.emitDirectoryProgress(0, totalDirectories, startedAt);
 
-      const mm = await import('music-metadata');
+      let mm: typeof import('music-metadata') | null = null;
       const failedDirectories = new Set<string>();
 
       for (const [directoryPath, directoryFiles] of filesByDirectory) {
         const checksum = this.buildDirectoryChecksum(directoryFiles);
-        currentDirectoryChecksums[directoryPath] = checksum;
 
         const hasDirectoryChanged = previousDirectoryChecksums[directoryPath] !== checksum;
         if (hasDirectoryChanged) {
           changedDirectoriesCount += 1;
+          mm ??= await import('music-metadata');
+
           for (const filePath of directoryFiles) {
             try {
               const fileStats = fs.statSync(filePath);
@@ -731,8 +732,8 @@ export class ScannerService implements OnModuleInit {
           }
         }
 
-        if (!failedDirectories.has(directoryPath)) {
-          await this.saveDirectoryChecksums({ [directoryPath]: checksum });
+        if (hasDirectoryChanged && !failedDirectories.has(directoryPath)) {
+          changedDirectoryChecksums[directoryPath] = checksum;
         }
 
         completedDirectories += 1;
@@ -750,13 +751,19 @@ export class ScannerService implements OnModuleInit {
 
       await this.emitFinalizingProgress(totalDirectories, startedAt);
 
-      const existingTracks = await this.prisma.track.findMany({
-        select: { id: true, filePath: true },
-      });
+      const hasLibraryChanges =
+        changedDirectoriesCount > 0 || removedDirectories.length > 0 || options.fullRescan;
+      let missingIds: string[] = [];
 
-      const missingIds = existingTracks
-        .filter((track) => !scannedPaths.has(track.filePath))
-        .map((track) => track.id);
+      if (hasLibraryChanges) {
+        const existingTracks = await this.prisma.track.findMany({
+          select: { id: true, filePath: true },
+        });
+
+        missingIds = existingTracks
+          .filter((track) => !scannedPaths.has(track.filePath))
+          .map((track) => track.id);
+      }
 
       if (missingIds.length > 0) {
         await this.prisma.$transaction(async (tx) => {
@@ -779,21 +786,19 @@ export class ScannerService implements OnModuleInit {
         this.logger.log(`Removed ${missingIds.length} missing tracks.`);
       }
 
-      await this.pruneOrphanedLibraryEntities();
-
-      const nextDirectoryChecksums = { ...currentDirectoryChecksums };
-      for (const directoryPath of failedDirectories) {
-        const previous = previousDirectoryChecksums[directoryPath];
-        if (previous) {
-          nextDirectoryChecksums[directoryPath] = previous;
-        } else {
-          delete nextDirectoryChecksums[directoryPath];
-        }
+      if (hasLibraryChanges || missingIds.length > 0) {
+        await this.pruneOrphanedLibraryEntities();
       }
 
-      await this.saveDirectoryChecksums(nextDirectoryChecksums);
+      for (const directoryPath of failedDirectories) {
+        delete changedDirectoryChecksums[directoryPath];
+      }
 
-      await this.pruneUnusedCovers();
+      await this.saveDirectoryChecksums(changedDirectoryChecksums);
+
+      if (hasLibraryChanges || missingIds.length > 0) {
+        await this.pruneUnusedCovers();
+      }
       this.logger.log('Scan complete!');
 
       this.emitProgress({
