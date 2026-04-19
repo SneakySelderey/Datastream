@@ -321,22 +321,29 @@ export class ScannerService implements OnModuleInit {
     this.scannerGateway.emitProgress(progress);
   }
 
-  private emitDirectoryProgress(completedDirectories: number, totalDirectories: number, startedAt: string) {
+  private async yieldToEventLoop() {
+    await new Promise<void>((resolve) => setImmediate(resolve));
+  }
+
+  private async emitDirectoryProgress(completedDirectories: number, totalDirectories: number, startedAt: string) {
     this.emitProgress({
       status: 'running',
       foldersScanned: completedDirectories,
       totalFolders: totalDirectories,
       startedAt,
     });
+
+    await this.yieldToEventLoop();
   }
 
-  private emitFinalizingProgress(totalDirectories: number, startedAt: string) {
+  private async emitFinalizingProgress(totalDirectories: number, startedAt: string) {
     this.emitProgress({
       status: 'finalizing',
       foldersScanned: totalDirectories,
       totalFolders: totalDirectories,
       startedAt,
     });
+    await this.yieldToEventLoop();
   }
 
   private getErrorMessage(error: unknown): string {
@@ -486,7 +493,7 @@ export class ScannerService implements OnModuleInit {
       let changedDirectoriesCount = 0;
       let completedDirectories = 0;
 
-      this.emitDirectoryProgress(0, totalDirectories, startedAt);
+      await this.emitDirectoryProgress(0, totalDirectories, startedAt);
 
       const mm = await import('music-metadata');
       const failedDirectories = new Set<string>();
@@ -729,7 +736,7 @@ export class ScannerService implements OnModuleInit {
         }
 
         completedDirectories += 1;
-        this.emitDirectoryProgress(completedDirectories, totalDirectories, startedAt);
+        await this.emitDirectoryProgress(completedDirectories, totalDirectories, startedAt);
       }
 
       const removedDirectories = Object.keys(previousDirectoryChecksums).filter(
@@ -741,7 +748,7 @@ export class ScannerService implements OnModuleInit {
         `Found ${files.length} files in ${filesByDirectory.size} directories. ${changedDirectoriesCount} changed/new directories, ${removedDirectories.length} removed directories.`,
       );
 
-      this.emitFinalizingProgress(totalDirectories, startedAt);
+      await this.emitFinalizingProgress(totalDirectories, startedAt);
 
       const existingTracks = await this.prisma.track.findMany({
         select: { id: true, filePath: true },
