@@ -55,13 +55,13 @@ const Filters: React.FC<FiltersProps> = ({
   };
 
   useEffect(() => {
-    if (genre && !genres.includes(genre)) {
+    if (genre && genres.length > 0 && !genres.includes(genre)) {
       onGenreChange('');
     }
   }, [genre, genres, onGenreChange]);
 
   useEffect(() => {
-    if (year && !years.includes(year)) {
+    if (year && years.length > 0 && !years.includes(year)) {
       onYearChange('');
     }
   }, [year, years, onYearChange]);
