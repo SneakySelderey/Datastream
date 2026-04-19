@@ -724,6 +724,10 @@ export class ScannerService implements OnModuleInit {
           }
         }
 
+        if (!failedDirectories.has(directoryPath)) {
+          await this.saveDirectoryChecksums({ [directoryPath]: checksum });
+        }
+
         completedDirectories += 1;
         this.emitDirectoryProgress(completedDirectories, totalDirectories, startedAt);
       }
