@@ -7,6 +7,12 @@ import { glob } from 'glob';
 import * as crypto from 'crypto';
 import { ScannerGateway, type ScanProgressPayload } from './scanner.gateway';
 
+interface ExistingTrackScanState {
+  id: string;
+  filePath: string;
+  metadataChecksum: string | null;
+}
+
 @Injectable()
 export class ScannerService implements OnModuleInit {
   private readonly logger = new Logger(ScannerService.name);
@@ -408,6 +414,59 @@ export class ScannerService implements OnModuleInit {
     }
   }
 
+  private async loadExistingTracksByPath(filePaths: string[]): Promise<Map<string, ExistingTrackScanState>> {
+    const tracksByPath = new Map<string, ExistingTrackScanState>();
+    const chunkSize = 500;
+
+    for (let index = 0; index < filePaths.length; index += chunkSize) {
+      const tracks = await this.prisma.track.findMany({
+        where: {
+          filePath: {
+            in: filePaths.slice(index, index + chunkSize),
+          },
+        },
+        select: {
+          id: true,
+          filePath: true,
+          metadataChecksum: true,
+        },
+      });
+
+      for (const track of tracks) {
+        tracksByPath.set(track.filePath, track);
+      }
+    }
+
+    return tracksByPath;
+  }
+
+  private async loadTracksInDirectories(directoryPaths: string[]): Promise<ExistingTrackScanState[]> {
+    const tracks: ExistingTrackScanState[] = [];
+    const chunkSize = 100;
+
+    for (let index = 0; index < directoryPaths.length; index += chunkSize) {
+      const directoryChunk = directoryPaths.slice(index, index + chunkSize);
+      const chunkTracks = await this.prisma.track.findMany({
+        where: {
+          OR: directoryChunk.map((directoryPath) => ({
+            filePath: {
+              startsWith: `${directoryPath}${path.sep}`,
+            },
+          })),
+        },
+        select: {
+          id: true,
+          filePath: true,
+          metadataChecksum: true,
+        },
+      });
+
+      tracks.push(...chunkTracks);
+    }
+
+    return tracks;
+  }
+
   private async pruneOrphanedLibraryEntities() {
     await this.prisma.$transaction(async (tx) => {
       await tx.album.deleteMany({
@@ -427,12 +486,13 @@ export class ScannerService implements OnModuleInit {
     });
   }
 
-  private buildDirectoryChecksum(filesInDirectory: string[]): string {
+  private buildDirectoryChecksum(filesInDirectory: string[], statsByPath?: Map<string, fs.Stats>): string {
     const hash = crypto.createHash('md5');
 
     const sortedFiles = [...filesInDirectory].sort();
     for (const filePath of sortedFiles) {
       const stats = fs.statSync(filePath);
+      statsByPath?.set(filePath, stats);
       const relativePath = path.relative(this.musicPath, filePath);
       hash.update(relativePath);
       hash.update('|');
@@ -492,6 +552,7 @@ export class ScannerService implements OnModuleInit {
       const totalDirectories = filesByDirectory.size;
       let changedDirectoriesCount = 0;
       let completedDirectories = 0;
+      const changedDirectoryPaths: string[] = [];
 
       await this.emitDirectoryProgress(0, totalDirectories, startedAt);
 
@@ -499,18 +560,32 @@ export class ScannerService implements OnModuleInit {
       const failedDirectories = new Set<string>();
 
       for (const [directoryPath, directoryFiles] of filesByDirectory) {
-        const checksum = this.buildDirectoryChecksum(directoryFiles);
+        const directoryFileStats = new Map<string, fs.Stats>();
+        const checksum = this.buildDirectoryChecksum(directoryFiles, directoryFileStats);
 
         const hasDirectoryChanged = previousDirectoryChecksums[directoryPath] !== checksum;
         if (hasDirectoryChanged) {
           changedDirectoriesCount += 1;
-          mm ??= await import('music-metadata');
+          changedDirectoryPaths.push(directoryPath);
+          const existingTracksByPath = options.fullRescan
+            ? new Map<string, ExistingTrackScanState>()
+            : await this.loadExistingTracksByPath(directoryFiles);
 
           for (const filePath of directoryFiles) {
             try {
-              const fileStats = fs.statSync(filePath);
+              const fileStats = directoryFileStats.get(filePath) ?? fs.statSync(filePath);
               const fileMtimeChecksum = this.buildFileFingerprintChecksum(fileStats);
+              const existingTrackAtPath = existingTracksByPath.get(filePath) ?? null;
 
+              if (
+                !options.fullRescan &&
+                existingTrackAtPath &&
+                existingTrackAtPath.metadataChecksum === fileMtimeChecksum
+              ) {
+                continue;
+              }
+
+              mm ??= await import('music-metadata');
               const metadata = await mm.parseFile(filePath);
               const { common, format } = metadata;
 
@@ -568,14 +643,7 @@ export class ScannerService implements OnModuleInit {
                     metadataChecksum: true,
                   },
                 }),
-                this.prisma.track.findUnique({
-                  where: { filePath },
-                  select: {
-                    id: true,
-                    filePath: true,
-                    metadataChecksum: true,
-                  },
-                }),
+                Promise.resolve(existingTrackAtPath),
               ]);
 
               const existingTrack = existingTrackByIdentity ?? existingTrackByPath;
@@ -756,9 +824,11 @@ export class ScannerService implements OnModuleInit {
       let missingIds: string[] = [];
 
       if (hasLibraryChanges) {
-        const existingTracks = await this.prisma.track.findMany({
-          select: { id: true, filePath: true },
-        });
+        const existingTracks = options.fullRescan
+          ? await this.prisma.track.findMany({
+              select: { id: true, filePath: true },
+            })
+          : await this.loadTracksInDirectories([...changedDirectoryPaths, ...removedDirectories]);
 
         missingIds = existingTracks
           .filter((track) => !scannedPaths.has(track.filePath))
