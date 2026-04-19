@@ -88,6 +88,9 @@ const Filters: React.FC<FiltersProps> = ({
         options={[allGenresLabel, ...genres]}
         selected={genre}
         placeholder={t('allGenres')}
+        searchable
+        searchPlaceholder={t('searchGenres')}
+        noOptionsText={t('nothingFound')}
         onSelect={handleGenreSelect}
       />
 
@@ -95,6 +98,9 @@ const Filters: React.FC<FiltersProps> = ({
         options={[allYearsLabel, ...years]}
         selected={year}
         placeholder={t('allYears')}
+        searchable
+        searchPlaceholder={t('searchYears')}
+        noOptionsText={t('nothingFound')}
         onSelect={handleYearSelect}
       />
     </div>
