@@ -1,7 +1,10 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { CreateAuthDto } from './create-auth.dto';
 
 export class ChangePasswordDto extends PartialType(CreateAuthDto) {
-    id!: string;
-    newPassword!: string;
+  @ApiProperty({ example: 'user-id' })
+  id!: string;
+
+  @ApiProperty({ example: 'new-strong-password' })
+  newPassword!: string;
 }

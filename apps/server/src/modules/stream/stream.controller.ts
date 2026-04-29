@@ -1,10 +1,26 @@
-import { Controller, Get, Param, Res, StreamableFile, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Res,
+  StreamableFile,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  ApiCookieAuth,
+  ApiOperation,
+  ApiParam,
+  ApiProduces,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { type Response } from 'express';
 import { createReadStream, existsSync, statSync } from 'fs';
 import { extname, join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 
+@ApiTags('stream')
+@ApiCookieAuth()
 @Controller('stream')
 export class StreamController {
   private coversCachePath: string;
@@ -13,18 +29,28 @@ export class StreamController {
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {
-    this.coversCachePath = this.configService.get<string>('COVERS_CACHE_PATH', '/data/covers');
+    this.coversCachePath = this.configService.get<string>(
+      'COVERS_CACHE_PATH',
+      '/data/covers',
+    );
   }
 
   @Get('cover/:filename')
-  getCover(@Param('filename') filename: string, @Res({ passthrough: true }) res: Response) {
+  @ApiOperation({ summary: 'Stream cached album cover' })
+  @ApiParam({ name: 'filename', example: 'cover-hash.jpg' })
+  @ApiProduces('image/jpeg', 'image/png')
+  getCover(
+    @Param('filename') filename: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const path = join(this.coversCachePath, filename);
 
     if (!existsSync(path)) {
       throw new NotFoundException('Cover not found');
     }
 
-    const mimeType = extname(filename).toLowerCase() === '.png' ? 'image/png' : 'image/jpeg';
+    const mimeType =
+      extname(filename).toLowerCase() === '.png' ? 'image/png' : 'image/jpeg';
     res.setHeader('Content-Type', mimeType);
 
     const file = createReadStream(path);
@@ -32,7 +58,20 @@ export class StreamController {
   }
 
   @Get('track/:id')
-  async getTrack(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
+  @ApiOperation({ summary: 'Stream audio track file' })
+  @ApiParam({ name: 'id', example: 'track-id' })
+  @ApiProduces(
+    'audio/mpeg',
+    'audio/wav',
+    'audio/flac',
+    'audio/ogg',
+    'audio/aac',
+    'audio/mp4',
+  )
+  async getTrack(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const track = await this.prisma.track.findUnique({ where: { id } });
 
     if (!track || !existsSync(track.filePath)) {
@@ -53,10 +92,10 @@ export class StreamController {
     };
 
     res.set({
-      'Content-Type':  mimeTypes[fileFormat.toLowerCase()],
+      'Content-Type': mimeTypes[fileFormat.toLowerCase()],
       'Content-Length': fileSize,
       'Accept-Ranges': 'bytes',
-      'Content-Disposition': 'inline', 
+      'Content-Disposition': 'inline',
     });
 
     const file = createReadStream(track.filePath);
