@@ -1,0 +1,104 @@
+<mxfile host="app.diagrams.net" agent="Codex">
+  <diagram id="DatastreamDeployment" name="Datastream Deployment Diagram">
+    <mxGraphModel dx="1266" dy="851" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" value="Datastream Deployment Diagram" vertex="1">
+          <mxGeometry height="30" width="400" x="384" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-3" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="User device" vertex="1">
+          <mxGeometry height="30" width="120" x="405" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-7" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;direction=east;size=10;" value="" vertex="1">
+          <mxGeometry height="100" width="150" x="505" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Browser" vertex="1">
+          <mxGeometry height="60" width="120" x="525" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-12" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Client" vertex="1">
+          <mxGeometry height="30" width="120" x="380" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-13" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;direction=east;size=10;" value="" vertex="1">
+          <mxGeometry height="70" width="210" x="480" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-14" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Nginx" vertex="1">
+          <mxGeometry height="40" width="80" x="500" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-15" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;div&gt;Vite SPA&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="80" x="600" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-18" edge="1" parent="1" source="bGsicSDQt4qtLqYyCaCD-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0;entryDx=100;entryDy=0;entryPerimeter=0;" target="bGsicSDQt4qtLqYyCaCD-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-19" connectable="0" parent="bGsicSDQt4qtLqYyCaCD-18" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;div&gt;HTTP&lt;/div&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.0857" y="1" as="geometry">
+            <mxPoint x="19" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-23" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;div&gt;Server&lt;/div&gt;" vertex="1">
+          <mxGeometry height="30" width="120" x="380" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-24" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;direction=east;size=10;" value="" vertex="1">
+          <mxGeometry height="120" width="210" x="480" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-25" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="NestJS API" vertex="1">
+          <mxGeometry height="40" width="80" x="500" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-26" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;div&gt;Socket.IO Gateway&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="80" x="600" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-27" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Library Scanner" vertex="1">
+          <mxGeometry height="40" width="80" x="500" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-28" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;div&gt;Prisma Client&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="80" x="600" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-29" edge="1" parent="1" source="bGsicSDQt4qtLqYyCaCD-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="bGsicSDQt4qtLqYyCaCD-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-31" connectable="0" parent="bGsicSDQt4qtLqYyCaCD-29" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;div&gt;HTTP&lt;/div&gt;&lt;div&gt;REST API, audio stream&lt;/div&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1119" as="geometry">
+            <mxPoint x="-70" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-30" edge="1" parent="1" source="bGsicSDQt4qtLqYyCaCD-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="bGsicSDQt4qtLqYyCaCD-26">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="560" y="340" />
+              <mxPoint x="560" y="380" />
+              <mxPoint x="640" y="380" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-32" connectable="0" parent="bGsicSDQt4qtLqYyCaCD-30" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;div&gt;WebSocket&lt;/div&gt;&lt;div&gt;scanner progress&lt;/div&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.025" y="3" as="geometry">
+            <mxPoint x="98" y="-2" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-33" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" value="" vertex="1">
+          <mxGeometry height="110" width="145" x="515" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-34" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;div&gt;Database&lt;/div&gt;" vertex="1">
+          <mxGeometry height="30" width="60" x="430" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-35" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="SQLite" vertex="1">
+          <mxGeometry height="40" width="80" x="547.5" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-36" edge="1" parent="1" source="bGsicSDQt4qtLqYyCaCD-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="bGsicSDQt4qtLqYyCaCD-35">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="550" />
+              <mxPoint x="587" y="550" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bGsicSDQt4qtLqYyCaCD-37" connectable="0" parent="bGsicSDQt4qtLqYyCaCD-36" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;div&gt;SQLite file protocol&lt;/div&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.5116" y="-1" as="geometry">
+            <mxPoint x="67" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
