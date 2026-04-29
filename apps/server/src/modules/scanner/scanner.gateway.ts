@@ -1,17 +1,7 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Public } from '../auth/public.decorator';
-
-export type ScanStatus = 'idle' | 'running' | 'finalizing' | 'completed' | 'failed';
-
-export interface ScanProgressPayload {
-  status: ScanStatus;
-  foldersScanned: number;
-  totalFolders: number;
-  message?: string;
-  startedAt?: string;
-  finishedAt?: string;
-}
+import { ScanProgressDto } from './dto/scan-progress.dto';
 
 @WebSocketGateway({
   namespace: '/scanner',
@@ -20,13 +10,12 @@ export interface ScanProgressPayload {
     credentials: true,
   },
 })
-
 @Public()
 export class ScannerGateway {
   @WebSocketServer()
   server!: Server;
 
-  private lastProgress: ScanProgressPayload = {
+  private lastProgress: ScanProgressDto = {
     status: 'idle',
     foldersScanned: 0,
     totalFolders: 0,
@@ -36,7 +25,7 @@ export class ScannerGateway {
     client.emit('scan.progress', this.lastProgress);
   }
 
-  emitProgress(progress: ScanProgressPayload) {
+  emitProgress(progress: ScanProgressDto) {
     this.lastProgress = progress;
     if (this.server) {
       this.server.emit('scan.progress', progress);

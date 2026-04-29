@@ -5,7 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
 import * as crypto from 'crypto';
-import { ScannerGateway, type ScanProgressPayload } from './scanner.gateway';
+import { ScannerGateway } from './scanner.gateway';
+import { ScanProgressDto } from './dto/scan-progress.dto';
 
 interface ExistingTrackScanState {
   id: string;
@@ -25,7 +26,10 @@ export class ScannerService implements OnModuleInit {
     private scannerGateway: ScannerGateway,
     private configService: ConfigService,
   ) {
-    this.coversCachePath = this.configService.get<string>('COVERS_CACHE_PATH', '/data/covers');
+    this.coversCachePath = this.configService.get<string>(
+      'COVERS_CACHE_PATH',
+      '/data/covers',
+    );
   }
 
   async onModuleInit() {
@@ -47,7 +51,7 @@ export class ScannerService implements OnModuleInit {
     if (!picture) return null;
 
     const hash = crypto.createHash('md5').update(picture.data).digest('hex');
-    
+
     const ext = picture.format === 'image/png' ? 'png' : 'jpg';
     const filename = `${hash}.${ext}`;
     const savePath = path.join(this.coversCachePath, filename);
@@ -113,24 +117,24 @@ export class ScannerService implements OnModuleInit {
             identityHash,
           },
         });
-      })
+      }),
     );
 
-    return records.map(a => ({ id: a.id }));
+    return records.map((a) => ({ id: a.id }));
   }
 
   private async ensureGenres(names: string[]) {
     const records = await Promise.all(
-      names.map(name =>
+      names.map((name) =>
         this.prisma.genre.upsert({
           where: { name },
           update: {},
           create: { name },
-        })
-      )
+        }),
+      ),
     );
 
-    return records.map(g => ({ id: g.id }));
+    return records.map((g) => ({ id: g.id }));
   }
 
   private normalizeArtists(value?: string | string[] | null): string[] {
@@ -149,17 +153,20 @@ export class ScannerService implements OnModuleInit {
     return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
   }
 
-  private normalizeIdentityPart(value: string | number | null | undefined): string {
+  private normalizeIdentityPart(
+    value: string | number | null | undefined,
+  ): string {
     if (value === null || value === undefined) return '';
 
-    return String(value)
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, ' ');
+    return String(value).trim().toLowerCase().replace(/\s+/g, ' ');
   }
 
-  private buildIdentityHash(parts: Array<string | number | null | undefined>): string {
-    const normalized = parts.map((part) => this.normalizeIdentityPart(part)).join('|');
+  private buildIdentityHash(
+    parts: Array<string | number | null | undefined>,
+  ): string {
+    const normalized = parts
+      .map((part) => this.normalizeIdentityPart(part))
+      .join('|');
     return crypto.createHash('sha1').update(normalized).digest('hex');
   }
 
@@ -209,10 +216,15 @@ export class ScannerService implements OnModuleInit {
       return false;
     }
 
-    return normalizedLeft.every((name, index) => name === normalizedRight[index]);
+    return normalizedLeft.every(
+      (name, index) => name === normalizedRight[index],
+    );
   }
 
-  private async findAlbumByTitleAndArtists(title: string, artistNames: string[]) {
+  private async findAlbumByTitleAndArtists(
+    title: string,
+    artistNames: string[],
+  ) {
     const albums = await this.prisma.album.findMany({
       where: { title },
       select: {
@@ -268,7 +280,9 @@ export class ScannerService implements OnModuleInit {
     return values;
   }
 
-  private parseNumericTagValue(value: string | number | null | undefined): number | null {
+  private parseNumericTagValue(
+    value: string | number | null | undefined,
+  ): number | null {
     if (value === null || value === undefined) return null;
     if (typeof value === 'number') return Number.isFinite(value) ? value : null;
 
@@ -280,8 +294,14 @@ export class ScannerService implements OnModuleInit {
     return Number.isFinite(parsed) ? parsed : null;
   }
 
-  private getReplayGainValue(metadata: any, commonValue: unknown, nativeTagIds: string[]): number | null {
-    const fromCommon = this.parseNumericTagValue(commonValue as string | number | null | undefined);
+  private getReplayGainValue(
+    metadata: any,
+    commonValue: unknown,
+    nativeTagIds: string[],
+  ): number | null {
+    const fromCommon = this.parseNumericTagValue(
+      commonValue as string | number | null | undefined,
+    );
     if (fromCommon !== null) return fromCommon;
 
     const nativeValues = this.getNativeTagValues(metadata, nativeTagIds);
@@ -296,12 +316,14 @@ export class ScannerService implements OnModuleInit {
   private async pruneUnusedCovers() {
     if (!fs.existsSync(this.coversCachePath)) return;
 
-    const trackCovers = await this.prisma.track.findMany({ select: { coverPath: true } });
+    const trackCovers = await this.prisma.track.findMany({
+      select: { coverPath: true },
+    });
 
     const usedCovers = new Set(
       trackCovers
-        .map(c => c.coverPath)
-        .filter((c): c is string => Boolean(c))
+        .map((c) => c.coverPath)
+        .filter((c): c is string => Boolean(c)),
     );
 
     const files = fs.readdirSync(this.coversCachePath);
@@ -313,7 +335,9 @@ export class ScannerService implements OnModuleInit {
           fs.unlinkSync(path.join(this.coversCachePath, file));
           removed += 1;
         } catch (e) {
-          this.logger.warn(`Failed to remove cover ${file}: ${this.getErrorMessage(e)}`);
+          this.logger.warn(
+            `Failed to remove cover ${file}: ${this.getErrorMessage(e)}`,
+          );
         }
       }
     }
@@ -323,7 +347,7 @@ export class ScannerService implements OnModuleInit {
     }
   }
 
-  private emitProgress(progress: ScanProgressPayload) {
+  private emitProgress(progress: ScanProgressDto) {
     this.scannerGateway.emitProgress(progress);
   }
 
@@ -331,7 +355,11 @@ export class ScannerService implements OnModuleInit {
     await new Promise<void>((resolve) => setImmediate(resolve));
   }
 
-  private async emitDirectoryProgress(completedDirectories: number, totalDirectories: number, startedAt: string) {
+  private async emitDirectoryProgress(
+    completedDirectories: number,
+    totalDirectories: number,
+    startedAt: string,
+  ) {
     this.emitProgress({
       status: 'running',
       foldersScanned: completedDirectories,
@@ -342,7 +370,10 @@ export class ScannerService implements OnModuleInit {
     await this.yieldToEventLoop();
   }
 
-  private async emitFinalizingProgress(totalDirectories: number, startedAt: string) {
+  private async emitFinalizingProgress(
+    totalDirectories: number,
+    startedAt: string,
+  ) {
     this.emitProgress({
       status: 'finalizing',
       foldersScanned: totalDirectories,
@@ -370,7 +401,9 @@ export class ScannerService implements OnModuleInit {
         return acc;
       }, {});
     } catch (e) {
-      this.logger.warn(`Failed to load directory checksum state from database: ${this.getErrorMessage(e)}`);
+      this.logger.warn(
+        `Failed to load directory checksum state from database: ${this.getErrorMessage(e)}`,
+      );
       return {};
     }
   }
@@ -392,7 +425,9 @@ export class ScannerService implements OnModuleInit {
         });
       }
     } catch (e) {
-      this.logger.warn(`Failed to persist directory checksum state to database: ${this.getErrorMessage(e)}`);
+      this.logger.warn(
+        `Failed to persist directory checksum state to database: ${this.getErrorMessage(e)}`,
+      );
     }
   }
 
@@ -410,11 +445,15 @@ export class ScannerService implements OnModuleInit {
         },
       });
     } catch (e) {
-      this.logger.warn(`Failed to remove stale directory checksum state from database: ${this.getErrorMessage(e)}`);
+      this.logger.warn(
+        `Failed to remove stale directory checksum state from database: ${this.getErrorMessage(e)}`,
+      );
     }
   }
 
-  private async loadExistingTracksByPath(filePaths: string[]): Promise<Map<string, ExistingTrackScanState>> {
+  private async loadExistingTracksByPath(
+    filePaths: string[],
+  ): Promise<Map<string, ExistingTrackScanState>> {
     const tracksByPath = new Map<string, ExistingTrackScanState>();
     const chunkSize = 500;
 
@@ -440,7 +479,9 @@ export class ScannerService implements OnModuleInit {
     return tracksByPath;
   }
 
-  private async loadTracksInDirectories(directoryPaths: string[]): Promise<ExistingTrackScanState[]> {
+  private async loadTracksInDirectories(
+    directoryPaths: string[],
+  ): Promise<ExistingTrackScanState[]> {
     const tracks: ExistingTrackScanState[] = [];
     const chunkSize = 100;
 
@@ -486,7 +527,10 @@ export class ScannerService implements OnModuleInit {
     });
   }
 
-  private buildDirectoryChecksum(filesInDirectory: string[], statsByPath?: Map<string, fs.Stats>): string {
+  private buildDirectoryChecksum(
+    filesInDirectory: string[],
+    statsByPath?: Map<string, fs.Stats>,
+  ): string {
     const hash = crypto.createHash('md5');
 
     const sortedFiles = [...filesInDirectory].sort();
@@ -522,7 +566,9 @@ export class ScannerService implements OnModuleInit {
 
     try {
       if (options.fullRescan) {
-        this.logger.log('Running full rescan: rescanning all folders while preserving track identities.');
+        this.logger.log(
+          'Running full rescan: rescanning all folders while preserving track identities.',
+        );
       }
 
       this.logger.log(`Scanning: ${this.musicPath}`);
@@ -534,7 +580,7 @@ export class ScannerService implements OnModuleInit {
 
       const filesByDirectory = new Map<string, string[]>();
       const scannedPaths = new Set<string>();
-      
+
       for (const filePath of files) {
         scannedPaths.add(filePath);
         const directoryPath = path.dirname(filePath);
@@ -547,7 +593,9 @@ export class ScannerService implements OnModuleInit {
         }
       }
 
-      const previousDirectoryChecksums = options.fullRescan ? {} : await this.loadDirectoryChecksums();
+      const previousDirectoryChecksums = options.fullRescan
+        ? {}
+        : await this.loadDirectoryChecksums();
       const changedDirectoryChecksums: Record<string, string> = {};
       const totalDirectories = filesByDirectory.size;
       let changedDirectoriesCount = 0;
@@ -561,9 +609,13 @@ export class ScannerService implements OnModuleInit {
 
       for (const [directoryPath, directoryFiles] of filesByDirectory) {
         const directoryFileStats = new Map<string, fs.Stats>();
-        const checksum = this.buildDirectoryChecksum(directoryFiles, directoryFileStats);
+        const checksum = this.buildDirectoryChecksum(
+          directoryFiles,
+          directoryFileStats,
+        );
 
-        const hasDirectoryChanged = previousDirectoryChecksums[directoryPath] !== checksum;
+        const hasDirectoryChanged =
+          previousDirectoryChecksums[directoryPath] !== checksum;
         if (hasDirectoryChanged) {
           changedDirectoriesCount += 1;
           changedDirectoryPaths.push(directoryPath);
@@ -573,9 +625,12 @@ export class ScannerService implements OnModuleInit {
 
           for (const filePath of directoryFiles) {
             try {
-              const fileStats = directoryFileStats.get(filePath) ?? fs.statSync(filePath);
-              const fileMtimeChecksum = this.buildFileFingerprintChecksum(fileStats);
-              const existingTrackAtPath = existingTracksByPath.get(filePath) ?? null;
+              const fileStats =
+                directoryFileStats.get(filePath) ?? fs.statSync(filePath);
+              const fileMtimeChecksum =
+                this.buildFileFingerprintChecksum(fileStats);
+              const existingTrackAtPath =
+                existingTracksByPath.get(filePath) ?? null;
 
               if (
                 !options.fullRescan &&
@@ -591,8 +646,13 @@ export class ScannerService implements OnModuleInit {
 
               const c = common as any;
 
-              const nativeTrackArtists = this.getNativeTagValues(metadata, ['ARTIST', 'ARTISTS']);
-              let trackArtists = this.normalizeArtists(common.artists ?? common.artist ?? nativeTrackArtists);
+              const nativeTrackArtists = this.getNativeTagValues(metadata, [
+                'ARTIST',
+                'ARTISTS',
+              ]);
+              let trackArtists = this.normalizeArtists(
+                common.artists ?? common.artist ?? nativeTrackArtists,
+              );
               if (trackArtists.length === 0) {
                 trackArtists = ['Unknown Artist'];
               }
@@ -603,8 +663,11 @@ export class ScannerService implements OnModuleInit {
                 'ALBUMARTISTS',
                 'ALBUM ARTISTS',
               ]);
-              const albumArtistsFromCommon = this.normalizeArtists(c.albumartists ?? common.albumartist);
-              const albumArtistsFromNative = this.normalizeArtists(nativeAlbumArtists);
+              const albumArtistsFromCommon = this.normalizeArtists(
+                c.albumartists ?? common.albumartist,
+              );
+              const albumArtistsFromNative =
+                this.normalizeArtists(nativeAlbumArtists);
               const albumArtists =
                 albumArtistsFromNative.length > 0
                   ? albumArtistsFromNative
@@ -617,9 +680,12 @@ export class ScannerService implements OnModuleInit {
 
               let releaseDate: string | null = null;
               if (common.date) releaseDate = common.date;
-              else if (common.year) releaseDate = common.year.toString() + '-01-01';
+              else if (common.year)
+                releaseDate = common.year.toString() + '-01-01';
 
-              const albumYear = this.extractYear(common.date ?? common.year ?? releaseDate);
+              const albumYear = this.extractYear(
+                common.date ?? common.year ?? releaseDate,
+              );
               const albumDate = albumYear ?? releaseDate;
               const albumIdentityHash = this.buildAlbumIdentityHash({
                 albumTitle,
@@ -634,19 +700,21 @@ export class ScannerService implements OnModuleInit {
                 trackNumber: common.track.no,
               });
 
-              const [existingTrackByIdentity, existingTrackByPath] = await Promise.all([
-                this.prisma.track.findUnique({
-                  where: { identityHash },
-                  select: {
-                    id: true,
-                    filePath: true,
-                    metadataChecksum: true,
-                  },
-                }),
-                Promise.resolve(existingTrackAtPath),
-              ]);
+              const [existingTrackByIdentity, existingTrackByPath] =
+                await Promise.all([
+                  this.prisma.track.findUnique({
+                    where: { identityHash },
+                    select: {
+                      id: true,
+                      filePath: true,
+                      metadataChecksum: true,
+                    },
+                  }),
+                  Promise.resolve(existingTrackAtPath),
+                ]);
 
-              const existingTrack = existingTrackByIdentity ?? existingTrackByPath;
+              const existingTrack =
+                existingTrackByIdentity ?? existingTrackByPath;
 
               if (
                 existingTrackByIdentity &&
@@ -658,8 +726,14 @@ export class ScannerService implements OnModuleInit {
                 );
               }
 
-              if (existingTrack && existingTrack.metadataChecksum === fileMtimeChecksum) {
-                if (!existingTrackByIdentity || existingTrack.filePath !== filePath) {
+              if (
+                existingTrack &&
+                existingTrack.metadataChecksum === fileMtimeChecksum
+              ) {
+                if (
+                  !existingTrackByIdentity ||
+                  existingTrack.filePath !== filePath
+                ) {
                   await this.prisma.track.update({
                     where: { id: existingTrack.id },
                     data: {
@@ -674,25 +748,37 @@ export class ScannerService implements OnModuleInit {
               }
 
               const coverFilename = this.saveCover(common.picture?.[0]);
-              const replayGainTrack = this.getReplayGainValue(metadata, c.replaygain_track_gain, [
-                'REPLAYGAIN_TRACK_GAIN',
-              ]);
-              const replayGainAlbum = this.getReplayGainValue(metadata, c.replaygain_album_gain, [
-                'REPLAYGAIN_ALBUM_GAIN',
-              ]);
-              const replayPeakTrack = this.getReplayGainValue(metadata, c.replaygain_track_peak, [
-                'REPLAYGAIN_TRACK_PEAK',
-              ]);
-              const replayPeakAlbum = this.getReplayGainValue(metadata, c.replaygain_album_peak, [
-                'REPLAYGAIN_ALBUM_PEAK',
-              ]);
+              const replayGainTrack = this.getReplayGainValue(
+                metadata,
+                c.replaygain_track_gain,
+                ['REPLAYGAIN_TRACK_GAIN'],
+              );
+              const replayGainAlbum = this.getReplayGainValue(
+                metadata,
+                c.replaygain_album_gain,
+                ['REPLAYGAIN_ALBUM_GAIN'],
+              );
+              const replayPeakTrack = this.getReplayGainValue(
+                metadata,
+                c.replaygain_track_peak,
+                ['REPLAYGAIN_TRACK_PEAK'],
+              );
+              const replayPeakAlbum = this.getReplayGainValue(
+                metadata,
+                c.replaygain_album_peak,
+                ['REPLAYGAIN_ALBUM_PEAK'],
+              );
 
               const metadataChecksum = fileMtimeChecksum;
-              const albumArtistConnections = await this.ensureArtists(albumArtists);
+              const albumArtistConnections =
+                await this.ensureArtists(albumArtists);
               let album = await this.findAlbumByIdentity(albumIdentityHash);
 
               if (!album) {
-                album = await this.findAlbumByTitleAndArtists(albumTitle, albumArtists);
+                album = await this.findAlbumByTitleAndArtists(
+                  albumTitle,
+                  albumArtists,
+                );
               }
 
               if (!album) {
@@ -795,7 +881,9 @@ export class ScannerService implements OnModuleInit {
               }
             } catch (e) {
               failedDirectories.add(directoryPath);
-              this.logger.error(`Error processing ${filePath}: ${this.getErrorMessage(e)}`);
+              this.logger.error(
+                `Error processing ${filePath}: ${this.getErrorMessage(e)}`,
+              );
             }
           }
         }
@@ -805,7 +893,11 @@ export class ScannerService implements OnModuleInit {
         }
 
         completedDirectories += 1;
-        await this.emitDirectoryProgress(completedDirectories, totalDirectories, startedAt);
+        await this.emitDirectoryProgress(
+          completedDirectories,
+          totalDirectories,
+          startedAt,
+        );
       }
 
       const removedDirectories = Object.keys(previousDirectoryChecksums).filter(
@@ -820,7 +912,9 @@ export class ScannerService implements OnModuleInit {
       await this.emitFinalizingProgress(totalDirectories, startedAt);
 
       const hasLibraryChanges =
-        changedDirectoriesCount > 0 || removedDirectories.length > 0 || options.fullRescan;
+        changedDirectoriesCount > 0 ||
+        removedDirectories.length > 0 ||
+        options.fullRescan;
       let missingIds: string[] = [];
 
       if (hasLibraryChanges) {
@@ -828,7 +922,10 @@ export class ScannerService implements OnModuleInit {
           ? await this.prisma.track.findMany({
               select: { id: true, filePath: true },
             })
-          : await this.loadTracksInDirectories([...changedDirectoryPaths, ...removedDirectories]);
+          : await this.loadTracksInDirectories([
+              ...changedDirectoryPaths,
+              ...removedDirectories,
+            ]);
 
         missingIds = existingTracks
           .filter((track) => !scannedPaths.has(track.filePath))
