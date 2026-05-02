@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger } from '@nestjs/common';
+import { Logger, RequestMethod } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
@@ -20,6 +20,15 @@ async function bootstrap() {
     app.useStaticAssets(frontendRoot);
     logger.log(`Serving frontend assets from ${frontendRoot}`);
   }
+
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: 'stream', method: RequestMethod.ALL },
+      { path: 'stream/(.*)', method: RequestMethod.ALL },
+      { path: 'docs', method: RequestMethod.ALL },
+      { path: 'docs/(.*)', method: RequestMethod.ALL },
+    ],
+  });
 
   if (process.env.NODE_ENV !== 'production') {
     app.enableCors({
