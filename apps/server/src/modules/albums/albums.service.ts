@@ -10,6 +10,8 @@ import {
 export class AlbumsService {
   constructor(private prisma: PrismaService) {}
 
+  private readonly relationChunkSize = 200;
+
   private chunkItems<T>(items: T[], size: number): T[][];
   private chunkItems<T>(items: T[], size: number): T[][] {
     const chunks: T[][] = [];
@@ -44,6 +46,51 @@ export class AlbumsService {
       genres: allGenres.map((genreRecord) => genreRecord.name),
       years: uniqueYears,
     };
+  }
+
+  private async getSearchableAlbums(
+    where: any,
+    orderBy?: any,
+  ): Promise<
+    Array<{ id: string; title: string; artists: Array<{ name: string }> }>
+  > {
+    const albums = await this.prisma.album.findMany({
+      where,
+      select: {
+        id: true,
+        title: true,
+      },
+      orderBy,
+    });
+    const artistNamesByAlbumId = new Map<string, string[]>();
+    const albumIdChunks = this.chunkItems(
+      albums.map((album) => album.id),
+      this.relationChunkSize,
+    );
+
+    for (const albumIdChunk of albumIdChunks) {
+      const albumsWithArtists = await this.prisma.album.findMany({
+        where: { id: { in: albumIdChunk } },
+        select: {
+          id: true,
+          artists: { select: { name: true } },
+        },
+      });
+
+      for (const album of albumsWithArtists) {
+        artistNamesByAlbumId.set(
+          album.id,
+          album.artists.map((artist) => artist.name),
+        );
+      }
+    }
+
+    return albums.map((album) => ({
+      ...album,
+      artists: (artistNamesByAlbumId.get(album.id) ?? []).map((name) => ({
+        name,
+      })),
+    }));
   }
 
   private async getAlbumsPage(
@@ -150,14 +197,7 @@ export class AlbumsService {
     }
 
     if (order === 'most-played') {
-      const matchingAlbums = await this.prisma.album.findMany({
-        where,
-        select: {
-          id: true,
-          title: true,
-          artists: { select: { name: true } },
-        },
-      });
+      const matchingAlbums = await this.getSearchableAlbums(where);
       const searchedAlbums = matchingAlbums.filter((album) =>
         matchesNormalizedSearch(
           [album.title, ...album.artists.map((artist) => artist.name)],
@@ -206,14 +246,7 @@ export class AlbumsService {
     }
 
     if (order === 'recently-played') {
-      const matchingAlbums = await this.prisma.album.findMany({
-        where,
-        select: {
-          id: true,
-          title: true,
-          artists: { select: { name: true } },
-        },
-      });
+      const matchingAlbums = await this.getSearchableAlbums(where);
       const searchedAlbums = matchingAlbums.filter((album) =>
         matchesNormalizedSearch(
           [album.title, ...album.artists.map((artist) => artist.name)],
@@ -261,14 +294,7 @@ export class AlbumsService {
 
     if (order === 'random') {
       const [matchingAlbums, meta] = await Promise.all([
-        this.prisma.album.findMany({
-          where,
-          select: {
-            id: true,
-            title: true,
-            artists: { select: { name: true } },
-          },
-        }),
+        this.getSearchableAlbums(where),
         this.getAlbumsMeta(),
       ]);
 
@@ -298,18 +324,7 @@ export class AlbumsService {
 
     if (normalizedSearch) {
       const [matchingAlbums, meta] = await Promise.all([
-        this.prisma.album.findMany({
-          where,
-          include: {
-            artists: true,
-            tracks: {
-              select: { coverPath: true },
-              orderBy: { number: 'asc' },
-              take: 1,
-            },
-          },
-          orderBy,
-        }),
+        this.getSearchableAlbums(where, orderBy),
         this.getAlbumsMeta(),
       ]);
 
@@ -319,13 +334,10 @@ export class AlbumsService {
           normalizedSearch,
         ),
       );
-
-      const data = filteredAlbums
+      const pagedIds = filteredAlbums
         .slice(skip, skip + Number(limit))
-        .map((album) => {
-          const coverPath = album.tracks[0]?.coverPath ?? null;
-          return { ...album, coverPath };
-        });
+        .map((album) => album.id);
+      const data = await this.getAlbumsPage(pagedIds);
 
       return {
         data,
