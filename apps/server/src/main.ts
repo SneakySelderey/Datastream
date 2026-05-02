@@ -1,12 +1,25 @@
 import { NestFactory } from '@nestjs/core';
+import { Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { existsSync } from 'fs';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const logger = new Logger('Bootstrap');
 
   app.use(cookieParser());
+
+  const frontendRoot =
+    process.env.DATASTREAM_FRONTEND_ROOT ?? join(process.cwd(), 'public');
+
+  if (existsSync(frontendRoot)) {
+    app.useStaticAssets(frontendRoot);
+    logger.log(`Serving frontend assets from ${frontendRoot}`);
+  }
 
   if (process.env.NODE_ENV !== 'production') {
     app.enableCors({
