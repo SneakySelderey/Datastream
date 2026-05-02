@@ -45,12 +45,6 @@ services:
       - datastream_db:/data
       - ${MUSIC_HOST_PATH:-./apps/server/temp-music-dir}:/music:ro
     restart: unless-stopped
-    networks:
-      - datastream
-
-networks:
-  datastream:
-    driver: bridge
 
 volumes:
   datastream_db:
