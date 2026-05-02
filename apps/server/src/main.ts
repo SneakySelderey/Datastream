@@ -27,9 +27,9 @@ async function bootstrap() {
   app.setGlobalPrefix('api', {
     exclude: [
       { path: 'stream', method: RequestMethod.ALL },
-      { path: 'stream/(.*)', method: RequestMethod.ALL },
+      { path: 'stream/*path', method: RequestMethod.ALL },
       { path: 'docs', method: RequestMethod.ALL },
-      { path: 'docs/(.*)', method: RequestMethod.ALL },
+      { path: 'docs/*path', method: RequestMethod.ALL },
     ],
   });
 
