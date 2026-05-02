@@ -5,7 +5,8 @@ import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { existsSync } from 'fs';
-import { join } from 'path';
+import { extname, join } from 'path';
+import { type NextFunction, type Request, type Response } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -15,8 +16,10 @@ async function bootstrap() {
 
   const frontendRoot =
     process.env.DATASTREAM_FRONTEND_ROOT ?? join(process.cwd(), 'public');
+  const frontendIndex = join(frontendRoot, 'index.html');
+  const hasFrontend = existsSync(frontendIndex);
 
-  if (existsSync(frontendRoot)) {
+  if (hasFrontend) {
     app.useStaticAssets(frontendRoot);
     logger.log(`Serving frontend assets from ${frontendRoot}`);
   }
@@ -45,6 +48,25 @@ async function bootstrap() {
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, swaggerDocument);
+
+  if (hasFrontend) {
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      const isFrontendRoute =
+        req.method === 'GET' &&
+        req.accepts('html') &&
+        !extname(req.path) &&
+        !req.path.startsWith('/api') &&
+        !req.path.startsWith('/stream') &&
+        !req.path.startsWith('/docs') &&
+        !req.path.startsWith('/socket.io');
+
+      if (!isFrontendRoute) {
+        return next();
+      }
+
+      return res.sendFile(frontendIndex);
+    });
+  }
 
   await app.listen(process.env.PORT ?? 3000);
 }
