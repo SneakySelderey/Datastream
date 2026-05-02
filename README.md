@@ -15,10 +15,9 @@ Main features:
 
 ![Album screenshot](docs/images/album-page.png)
 
-This project runs with two containers:
+This project runs as one application container:
 
-- `server` (NestJS API + scanner + WebSocket)
-- `client` (built Vite frontend served by Nginx, with reverse proxy to backend for `/api` and `/stream`)
+- `datastream` (NestJS API + scanner + WebSocket + built Vite frontend)
 
 ## Installation
 
@@ -35,26 +34,16 @@ Use this `docker-compose.yml`:
 
 ```yaml
 services:
-  server:
-    image:
-      sneakyselderey/datastream-server:latest
+  datastream:
+    image: sneakyselderey/datastream:latest
     environment:
       JWT_SECRET: ${JWT_SECRET:-SUPER_SECRET_KEY}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    ports:
+      - "${CLIENT_PORT:-8080}:3000"
     volumes:
       - datastream_db:/data
       - ${MUSIC_HOST_PATH:-./apps/server/temp-music-dir}:/music:ro
-    restart: unless-stopped
-    networks:
-      - datastream
-
-  client:
-    image:
-      sneakyselderey/datastream-client:latest
-    depends_on:
-      - server
-    ports:
-      - "${CLIENT_PORT:-8080}:80"
     restart: unless-stopped
     networks:
       - datastream
@@ -79,15 +68,17 @@ Open:
 
 ## Routing
 
-- Browser calls `client` on port `8080`.
-- `client` Nginx proxies:
-  - `/api/*` -> backend (`server:3000`) with `/api` prefix stripped
-  - `/stream/*` -> backend (`server:3000`)
-- other paths are served as SPA routes by frontend.
+- Browser calls `datastream` on port `8080`.
+- NestJS handles API, media streaming, Swagger, WebSocket, and frontend file serving in the same container.
+- `/api/*` routes are handled by backend controllers.
+- `/stream/*` routes are handled by backend streaming endpoints.
+- `/docs` serves Swagger/OpenAPI documentation.
+- `/socket.io` is used by scanner progress WebSocket updates.
+- Other browser page paths are served as SPA routes by the built frontend.
 
 WebSocket path used by frontend:
 
-- `/api/socket.io` -> backend Socket.IO endpoint `/socket.io` (via Nginx proxy)
+- `/socket.io`
 
 ## Notes
 
