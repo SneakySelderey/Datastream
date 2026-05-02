@@ -1,5 +1,6 @@
 services:
   datastream:
+    image: datastream:latest
     build:
       context: .
       dockerfile: Dockerfile
