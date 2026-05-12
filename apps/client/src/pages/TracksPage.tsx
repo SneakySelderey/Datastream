@@ -17,7 +17,9 @@ const TracksPage = () => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(
+    Number.parseInt(searchParams.get('page') || '1', 10),
+  );
   const [itemsPerPage, setItemsPerPage] = useLocalStorage<number>('tracksPerPage', 18);
 
   const [filters, setFilters] = useState<FilterState>({
@@ -46,13 +48,13 @@ const TracksPage = () => {
   useEffect(() => {
     const params: Record<string, string> = {};
     if (orderMode && orderMode !== 'default') params.order = orderMode;
-
+    if (currentPage > 1) params.page = String(currentPage);
     if (effectiveFilters.genre) params.genre = effectiveFilters.genre;
     if (effectiveFilters.search) params.search = effectiveFilters.search;
     if (effectiveFilters.year) params.year = effectiveFilters.year;
     
     setSearchParams(params, { replace: true });
-  }, [effectiveFilters, orderMode, setSearchParams]);
+  }, [effectiveFilters, orderMode, currentPage, setSearchParams]);
 
   const handleOrderChange = (newOrder: string) => {
     setSearchParams(prev => {

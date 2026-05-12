@@ -18,7 +18,9 @@ const PlaylistsPage = () => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(
+    Number.parseInt(searchParams.get('page') || '1', 10),
+  );
   const [itemsPerPage, setItemsPerPage] = useLocalStorage<number>('playlistsPerPage', 18);
 
   const [search, setSearch] = useState(searchParams.get('search') || '');
@@ -29,9 +31,10 @@ const PlaylistsPage = () => {
   useEffect(() => {
     const params: Record<string, string> = {};
     if (debouncedSearch) params.search = debouncedSearch;
+    if (currentPage > 1) params.page = String(currentPage);
     
     setSearchParams(params, { replace: true });
-  }, [debouncedSearch, setSearchParams]);
+  }, [debouncedSearch, currentPage, setSearchParams]);
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
