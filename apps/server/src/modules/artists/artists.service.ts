@@ -24,11 +24,12 @@ export class ArtistsService {
     }
 
     if (!normalizedSearch) {
+      const whereWithAlbums = { ...where, albums: { some: {} } };
       const [artists, total] = await Promise.all([
         this.prisma.artist.findMany({
           skip,
           take: Number(limit),
-          where,
+          where: whereWithAlbums,
           orderBy,
           include: {
             _count: {
@@ -39,7 +40,7 @@ export class ArtistsService {
             },
           },
         }),
-        this.prisma.artist.count({ where }),
+        this.prisma.artist.count({ where: whereWithAlbums }),
       ]);
 
       const formattedArtists = artists.map((artist) => {
@@ -64,7 +65,10 @@ export class ArtistsService {
     }
 
     const artists = await this.prisma.artist.findMany({
-      where,
+      where: {
+        ...where,
+        albums: { some: {} },
+      },
       orderBy,
       include: {
         _count: {
