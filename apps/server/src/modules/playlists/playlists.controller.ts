@@ -9,6 +9,7 @@ import {
   Delete,
   Req,
   Query,
+  SetMetadata,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -32,6 +33,7 @@ export class PlaylistsController {
   @Post()
   @ApiOperation({ summary: 'Create playlist' })
   @ApiBody({ type: CreatePlaylistDto })
+  @SetMetadata('auditAction', { value: 'CREATE', entityType: 'Playlist' })
   create(@Body() createPlaylistDto: CreatePlaylistDto, @Req() req) {
     return this.playlistsService.create(req.user.id, createPlaylistDto);
   }
@@ -54,6 +56,7 @@ export class PlaylistsController {
   @ApiOperation({ summary: 'Update playlist' })
   @ApiParam({ name: 'id', example: 'playlist-id' })
   @ApiBody({ type: UpdatePlaylistDto })
+  @SetMetadata('auditAction', { value: 'UPDATE', entityType: 'Playlist' })
   update(
     @Param('id') id: string,
     @Body() updatePlaylistDto: UpdatePlaylistDto,
@@ -83,6 +86,7 @@ export class PlaylistsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete playlist' })
   @ApiParam({ name: 'id', example: 'playlist-id' })
+  @SetMetadata('auditAction', { value: 'DELETE', entityType: 'Playlist' })
   remove(@Param('id') id: string) {
     return this.playlistsService.remove(id);
   }
